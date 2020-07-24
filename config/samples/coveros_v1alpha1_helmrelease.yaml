@@ -1,0 +1,7 @@
+apiVersion: coveros.coveros.com/v1alpha1
+kind: HelmRelease
+metadata:
+  name: helmrelease-sample
+spec:
+  # Add fields here
+  foo: bar

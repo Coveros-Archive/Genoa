@@ -1,0 +1,7 @@
+domain: coveros.com
+repo: coveros.com
+resources:
+- group: coveros
+  kind: HelmRelease
+  version: v1alpha1
+version: "2"

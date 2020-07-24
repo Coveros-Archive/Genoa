@@ -23,10 +23,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-logr/logr"
+	"helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/storage/driver"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
+	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -51,7 +53,6 @@ const (
 
 // +kubebuilder:rbac:groups=coveros.coveros.com,resources=helmreleases,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=coveros.coveros.com,resources=helmreleases/status,verbs=get;update;patch
-
 func (r *HelmReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
 	_ = r.Log.WithValues("helmrelease", req.NamespacedName)
@@ -83,13 +84,13 @@ func (r *HelmReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error)
 
 	// handle delete
 	if cr.GetDeletionTimestamp() != nil {
-		//if errCleaningUp := r.cleanup(cr, helmV3); errCleaningUp != nil {
-		//	return ctrl.Result{}, errCleaningUp
-		//}
+		if errCleaningUp := r.cleanup(cr, actionConfig); errCleaningUp != nil {
+			return ctrl.Result{}, errCleaningUp
+		}
 		return ctrl.Result{}, nil // do not requeue
 	}
 
-	_, errGettingReleaseInfo := actionConfig.GetRelease(hrName)
+	releaseInfo, errGettingReleaseInfo := actionConfig.GetRelease(hrName)
 	if errGettingReleaseInfo != nil {
 		if errors.Is(errGettingReleaseInfo, driver.ErrReleaseNotFound) {
 			r.Log.Info("release not found, installing now...")
@@ -116,6 +117,50 @@ func (r *HelmReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error)
 			if errInstallingChart != nil {
 				return ctrl.Result{}, errInstallingChart
 			}
+			// force requeue to get new release state
+			return ctrl.Result{Requeue: true}, nil
+		}
+	}
+
+	if releaseInfo.Info.Status == release.StatusPendingInstall ||
+		releaseInfo.Info.Status == release.StatusUninstalling ||
+		releaseInfo.Info.Status == release.StatusPendingRollback ||
+		releaseInfo.Info.Status == release.StatusPendingUpgrade {
+
+		r.Log.Info(fmt.Sprintf("%v is still in '%v' phase, checking back in a few..", req.NamespacedName, releaseInfo.Info.Status))
+		return ctrl.Result{Requeue: true, RequeueAfter: 30 * time.Second}, nil
+	}
+
+	releaseValuesOverride := releaseInfo.Config
+	if releaseValuesOverride == nil {
+		releaseValuesOverride = map[string]interface{}{}
+	}
+
+	valuesInSync := reflect.DeepEqual(cr.Spec.ValuesOverride.V, releaseValuesOverride)
+	chartVersionInSync := cr.Spec.Version == releaseInfo.Chart.Metadata.Version
+	chartNameInSync := cr.Spec.Chart == releaseInfo.Chart.Metadata.Name
+
+	if !valuesInSync || !chartVersionInSync || !chartNameInSync {
+		repoUrl, username, password, errLookingUpRepo := actionConfig.GetRepoUrlFromRepoConfig(repoAlias)
+		if errLookingUpRepo != nil {
+			return ctrl.Result{}, errLookingUpRepo
+		}
+		r.Log.Info(fmt.Sprintf("downloading chart from %s", repoUrl))
+		chartPath, errDownloadingChart := actionConfig.DownloadChart(repoUrl, chartName,
+			cr.Spec.Version,
+			username, password, fmt.Sprintf("%v-%v", hrNamespace, hrName))
+		if errDownloadingChart != nil {
+			return ctrl.Result{}, errDownloadingChart
+		}
+		upgradeOpts := v3.UpgradeOptions{
+			Namespace:   hrNamespace,
+			DryRun:      cr.Spec.DryRun,
+			Wait:        cr.Spec.Wait,
+			Timeout:     time.Duration(cr.Spec.WaitTimeout),
+			ReleaseName: hrName,
+		}
+		if _, errUpgradingRelease := actionConfig.UpgradeRelease(chartPath, upgradeOpts, cr.Spec.ValuesOverride.V); errUpgradingRelease != nil {
+			return ctrl.Result{}, errUpgradingRelease
 		}
 	}
 

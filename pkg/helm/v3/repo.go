@@ -2,6 +2,7 @@ package v3
 
 import (
 	"coveros.com/pkg"
+	"coveros.com/pkg/utils"
 	"fmt"
 	"helm.sh/helm/v3/pkg/repo"
 	"strings"
@@ -15,7 +16,7 @@ func (h *HelmV3) GetRepoUrlFromRepoConfig(repoAliasName string) (string, string,
 
 	for _, eachRepo := range repoFile.Repositories {
 		if strings.ToLower(eachRepo.Name) == strings.ToLower(repoAliasName) {
-			return eachRepo.URL, eachRepo.Username, eachRepo.Password, nil
+			return utils.TrimSuffix(eachRepo.URL, "/"), eachRepo.Username, eachRepo.Password, nil
 		}
 	}
 

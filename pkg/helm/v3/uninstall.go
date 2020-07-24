@@ -6,14 +6,12 @@ import (
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/storage/driver"
-	"time"
 )
 
-func (h *HelmV3) UninstallRelease(releaseName string, timeout time.Duration) (*release.UninstallReleaseResponse, error) {
+func (h *HelmV3) UninstallRelease(releaseName string) (*release.UninstallReleaseResponse, error) {
 	uninstallClient := action.NewUninstall(h.actionConfig)
 	uninstallClient.DryRun = false
 	uninstallClient.KeepHistory = false
-	uninstallClient.Timeout = timeout * time.Second
 	out, err := uninstallClient.Run(releaseName)
 	if err != nil {
 		if errors.Is(err, driver.ErrReleaseNotFound) {

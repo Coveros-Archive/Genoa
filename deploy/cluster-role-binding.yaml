@@ -3,11 +3,11 @@
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: helm-operator
+  name: genoa
 subjects:
   - kind: ServiceAccount
-    name: helm-operator
-    namespace: helm-operator
+    name: genoa
+    namespace: genoa
 roleRef:
   kind: ClusterRole
   name: cluster-admin

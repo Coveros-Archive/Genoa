@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"strings"
 )
 
 func UnMarshalStringDataToHelmRelease(strData string) (*v1alpha1.HelmRelease, error) {
@@ -105,4 +106,11 @@ func CreateHelmRelease(hr *v1alpha1.HelmRelease, client client.Client) (*v1alpha
 
 	return hrFound, nil
 
+}
+
+func TrimSuffix(s, suffix string) string {
+	if strings.HasSuffix(s, suffix) {
+		s = s[:len(s)-len(suffix)]
+	}
+	return s
 }

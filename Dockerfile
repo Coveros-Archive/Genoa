@@ -16,7 +16,7 @@ COPY pkg/ pkg/
 COPY controllers/ controllers/
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o helm-operator main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o genoa main.go
 
 FROM alpine:3.10
 
@@ -25,7 +25,7 @@ RUN wget https://get.helm.sh/helm-v3.2.4-linux-amd64.tar.gz \
     && mv linux-amd64/helm /usr/local/bin \
     && rm -f helm-v3.2.4-linux-amd64.tar.gz && rm -rf linux-amd64
 COPY repositories.yaml /root/.config/helm/repositories.yaml
+RUN helm repo udpate
+COPY --from=builder /workspace/genoa /
 
-COPY --from=builder /workspace/helm-operator /
-
-ENTRYPOINT ["/helm-operator"]
+ENTRYPOINT ["/genoa"]

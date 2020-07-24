@@ -3,40 +3,40 @@ kind: Namespace
 metadata:
   labels:
     control-plane: controller-manager
-  name: helm-operator
+  name: genoa
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: helm-operator
-  namespace: helm-operator
+  name: genoa
+  namespace: genoa
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: helm-operator
-  namespace: helm-operator
+  name: genoa
+  namespace: genoa
   labels:
-    name: helm-operator
+    name: genoa
 spec:
   selector:
     matchLabels:
-      name: helm-operator
+      name: genoa
   replicas: 1
   template:
     metadata:
       labels:
-        name: helm-operator
+        name: genoa
     spec:
-      serviceAccountName: helm-operator
+      serviceAccountName: genoa
       containers:
         - command:
-            - /helm-operator
+            - /genoa
           args:
             - --enable-leader-election
           image: agill17/genoa:0.1.0
           imagePullPolicy: Always
-          name: helm-operator
+          name: genoa
           ports:
             - containerPort: 8081 # for github webhook
           livenessProbe:
@@ -49,11 +49,9 @@ spec:
             successThreshold: 1
             failureThreshold: 3
           resources:
-            limits:
-              memory: 1Gi
             requests:
               cpu: 100m
-              memory: 500Mi
+              memory: 250Mi
           env:
             - name: RELEASE_FILES_DIR
               value: "deploy/minikube"
@@ -64,11 +62,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: helm-operator
-  namespace: helm-operator
+  name: genoa
+  namespace: genoa
 spec:
   selector:
-    name: helm-operator
+    name: genoa
   ports:
     - port: 8081
       targetPort: 8081

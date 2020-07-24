@@ -132,6 +132,7 @@ func (r *HelmReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error)
 	}
 
 	valuesInSync := reflect.DeepEqual(cr.Spec.ValuesOverride.V, releaseValuesOverride)
+
 	chartVersionInSync := cr.Spec.Version == releaseInfo.Chart.Metadata.Version
 	chartNameInSync := cr.Spec.Chart == releaseInfo.Chart.Metadata.Name
 
@@ -157,7 +158,7 @@ func (r *HelmReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error)
 
 func (r *HelmReleaseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		WithOptions(controller.Options{MaxConcurrentReconciles: 5}).
+		WithOptions(controller.Options{MaxConcurrentReconciles: 7}).
 		For(&coverosv1alpha1.HelmRelease{}).
 		Complete(r)
 }

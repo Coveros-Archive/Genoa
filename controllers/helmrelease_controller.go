@@ -94,17 +94,12 @@ func (r *HelmReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error)
 	if errGettingReleaseInfo != nil {
 		if errors.Is(errGettingReleaseInfo, driver.ErrReleaseNotFound) {
 			r.Log.Info("release not found, installing now...")
-			repoUrl, username, password, errLookingUpRepo := actionConfig.GetRepoUrlFromRepoConfig(repoAlias)
-			if errLookingUpRepo != nil {
-				return ctrl.Result{}, errLookingUpRepo
+
+			chartPath, errPullingChart := r.pullChart(hrNamespace, hrName, repoAlias, chartName, cr.Spec.Version, actionConfig)
+			if errPullingChart != nil {
+				return ctrl.Result{}, errPullingChart
 			}
-			r.Log.Info(fmt.Sprintf("downloading chart from %s", repoUrl))
-			chartPath, errDownloadingChart := actionConfig.DownloadChart(repoUrl, chartName,
-				cr.Spec.Version,
-				username, password, fmt.Sprintf("%v-%v", hrNamespace, hrName))
-			if errDownloadingChart != nil {
-				return ctrl.Result{}, errDownloadingChart
-			}
+
 			installOptions := v3.InstallOptions{
 				Namespace:   hrNamespace,
 				DryRun:      cr.Spec.DryRun,
@@ -112,7 +107,7 @@ func (r *HelmReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error)
 				Timeout:     time.Duration(cr.Spec.WaitTimeout),
 				ReleaseName: hrName,
 			}
-			r.Log.Info(fmt.Sprintf("downloaded chart: %v", chartPath))
+			r.Log.Info(fmt.Sprintf("%v: downloaded chart at %v", req.NamespacedName, chartPath))
 			_, errInstallingChart := actionConfig.InstallRelease(chartPath, installOptions, cr.Spec.ValuesOverride.V)
 			if errInstallingChart != nil {
 				return ctrl.Result{}, errInstallingChart
@@ -141,16 +136,9 @@ func (r *HelmReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error)
 	chartNameInSync := cr.Spec.Chart == releaseInfo.Chart.Metadata.Name
 
 	if !valuesInSync || !chartVersionInSync || !chartNameInSync {
-		repoUrl, username, password, errLookingUpRepo := actionConfig.GetRepoUrlFromRepoConfig(repoAlias)
-		if errLookingUpRepo != nil {
-			return ctrl.Result{}, errLookingUpRepo
-		}
-		r.Log.Info(fmt.Sprintf("downloading chart from %s", repoUrl))
-		chartPath, errDownloadingChart := actionConfig.DownloadChart(repoUrl, chartName,
-			cr.Spec.Version,
-			username, password, fmt.Sprintf("%v-%v", hrNamespace, hrName))
-		if errDownloadingChart != nil {
-			return ctrl.Result{}, errDownloadingChart
+		chartPath, errPullingChart := r.pullChart(hrNamespace, hrName, repoAlias, chartName, cr.Spec.Version, actionConfig)
+		if errPullingChart != nil {
+			return ctrl.Result{}, errPullingChart
 		}
 		upgradeOpts := v3.UpgradeOptions{
 			Namespace:   hrNamespace,

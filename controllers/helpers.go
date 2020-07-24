@@ -5,6 +5,7 @@ import (
 	"coveros.com/api/v1alpha1"
 	v3 "coveros.com/pkg/helm/v3"
 	"coveros.com/pkg/utils"
+	"fmt"
 	"strings"
 )
 
@@ -57,4 +58,20 @@ func (r *HelmReleaseReconciler) cleanup(cr *v1alpha1.HelmRelease, actionConfig *
 		//}
 	}
 	return nil
+}
+
+func (r *HelmReleaseReconciler) pullChart(namespace, crName, repoAlias, chartName, version string, actionConfig *v3.HelmV3) (string, error) {
+	repoUrl, username, password, errLookingUpRepo := actionConfig.GetRepoUrlFromRepoConfig(repoAlias)
+	if errLookingUpRepo != nil {
+		return "", errLookingUpRepo
+	}
+	r.Log.Info(fmt.Sprintf("downloading chart from %s", repoUrl))
+	chartPath, errDownloadingChart := actionConfig.DownloadChart(repoUrl,
+		chartName, version,
+		username, password,
+		fmt.Sprintf("%v-%v", namespace, crName))
+	if errDownloadingChart != nil {
+		return "", errDownloadingChart
+	}
+	return chartPath, nil
 }

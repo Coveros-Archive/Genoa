@@ -1,0 +1,10 @@
+apiVersion: coveros.coveros.com/v1alpha1
+kind: HelmRelease
+metadata:
+  name: prometheus-operator
+  namespace: default
+spec:
+  chart: stable/prometheus-operator
+  version: 9.1.1 
+  wait: false
+  values: {}

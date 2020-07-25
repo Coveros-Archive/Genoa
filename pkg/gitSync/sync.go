@@ -32,6 +32,10 @@ func (wH WebhookHandler) syncHelmReleaseWithGithub(owner, repo, branch, releaseF
 		hrFromGit.Spec.ValuesOverride.V = map[string]interface{}{}
 	}
 
+	if hrFromGit.GetNamespace() == "" {
+		hrFromGit.SetNamespace("default")
+	}
+
 	// if GitBranchToFollowAnnotation is specified, we ONLY create/update CR's if the current source branch is the same as GitBranchToFollow
 	// this way users can have same CR's exist on many branches but only apply updates from the GitBranchToFollow
 	if branchToFollow, ok := hrFromGit.Annotations[utils.GitBranchToFollowAnnotation]; ok && branchToFollow != "" {
@@ -43,7 +47,7 @@ func (wH WebhookHandler) syncHelmReleaseWithGithub(owner, repo, branch, releaseF
 
 	if isRemovedFromGithub {
 		if err := wH.Client.Delete(context.TODO(), hrFromGit); err != nil {
-			log.Error(err, "Failed to delete %v which was removed from github: %v", hrFromGit.GetName(), releaseFile)
+			log.Error(err, "Failed to delete HelmRelease which was removed from github")
 			return
 		}
 		log.Info(fmt.Sprintf("Delete %v HelmRelease from cluster initiated...", hrFromGit.GetName()))

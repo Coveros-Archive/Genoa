@@ -51,13 +51,16 @@ spec:
           resources:
             limits:
               cpu: 500m
-              memory: 1Gi # recommended when running 10 workers. if running <= 5 workers; then the limit can be 500Mi
+              # recommended when running 10 workers.
+              # if running <= 5 workers; then the limit can be 500Mi.
+              # This number can also fluctuate based on the size of chart being installed ( for example, installing 10 prometheus-operators could consume upto 5Gi memory because of helm hooks )
+              memory: 1Gi
             requests:
               cpu: 100m
               memory: 500Mi
           env:
-            - name: RELEASE_FILES_DIR
-              value: "deploy/minikube"
+            - name: DEPLOY_DIRECTORY
+              value: "sample-helmReleases"
             - name: WEBHOOK_SECRET
               value: "YOUR-WEBHOOK-SECRET-REQUIRED"
       terminationGracePeriodSeconds: 10
@@ -73,3 +76,19 @@ spec:
   ports:
     - port: 8081
       targetPort: 8081
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: genoa
+  namespace: genoa
+  annotations: {}
+spec:
+  rules:
+  - host: genoa.amritgill.ml
+    http:
+      paths:
+        - path: /webhook
+          backend:
+            serviceName: genoa
+            servicePort: 8081

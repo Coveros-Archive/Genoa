@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"coveros.com/pkg"
 	v3 "coveros.com/pkg/helm/v3"
 	"coveros.com/pkg/utils"
 	"errors"
@@ -67,7 +68,7 @@ func (r *HelmReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error)
 	hrNamespace := cr.GetNamespace()
 	repoWithChartName := strings.Split(cr.Spec.Chart, "/")
 	repoAlias, chartName := repoWithChartName[0], repoWithChartName[1]
-	actionConfig, errCreatingActionConfig := v3.NewActionConfig(cr.GetNamespace(), r.Cfg)
+	helmV3, errCreatingActionConfig := v3.NewActionConfig(cr.GetNamespace(), r.Cfg)
 	if errCreatingActionConfig != nil {
 		return ctrl.Result{}, errCreatingActionConfig
 	}
@@ -79,19 +80,22 @@ func (r *HelmReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error)
 
 	// handle delete
 	if cr.GetDeletionTimestamp() != nil {
-		if errCleaningUp := r.cleanup(cr, actionConfig); errCleaningUp != nil {
+		if errCleaningUp := r.cleanup(cr, helmV3); errCleaningUp != nil {
 			return ctrl.Result{}, errCleaningUp
 		}
 		return ctrl.Result{}, nil // do not requeue
 	}
 
-	releaseInfo, errGettingReleaseInfo := actionConfig.GetRelease(hrName)
+	releaseInfo, errGettingReleaseInfo := helmV3.GetRelease(hrName)
 	if errGettingReleaseInfo != nil {
 		if errors.Is(errGettingReleaseInfo, driver.ErrReleaseNotFound) {
 			r.Log.Info("release not found, installing now...")
 
-			chartPath, errPullingChart := r.pullChart(hrNamespace, hrName, repoAlias, chartName, cr.Spec.Version, actionConfig)
+			chartPath, errPullingChart := r.pullChart(hrNamespace, hrName, repoAlias, chartName, cr.Spec.Version, helmV3)
 			if errPullingChart != nil {
+				if _, ok := errPullingChart.(pkg.ErrorHelmRepoNeedsRefresh); ok {
+					return ctrl.Result{Requeue: true}, helmV3.RefreshRepoIndex(repoAlias)
+				}
 				return ctrl.Result{}, errPullingChart
 			}
 
@@ -109,7 +113,7 @@ func (r *HelmReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error)
 				IncludeCRDs:              cr.Spec.IncludeCRDs,
 			}
 			r.Log.Info(fmt.Sprintf("%v: downloaded chart at %v", req.NamespacedName, chartPath))
-			_, errInstallingChart := actionConfig.InstallRelease(chartPath, installOptions, cr.Spec.ValuesOverride.V)
+			_, errInstallingChart := helmV3.InstallRelease(chartPath, installOptions, cr.Spec.ValuesOverride.V)
 			if errInstallingChart != nil {
 				return ctrl.Result{}, errInstallingChart
 			}
@@ -137,8 +141,12 @@ func (r *HelmReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error)
 		r.Log.Info(fmt.Sprintf("%v release chart version in sync with installed chart version: %v", req.NamespacedName, chartVersionInSync))
 		r.Log.Info(fmt.Sprintf("%v release chart name in sync with installed chart name: %v", req.NamespacedName, chartNameInSync))
 
-		chartPath, errPullingChart := r.pullChart(hrNamespace, hrName, repoAlias, chartName, cr.Spec.Version, actionConfig)
+		chartPath, errPullingChart := r.pullChart(hrNamespace, hrName, repoAlias, chartName, cr.Spec.Version, helmV3)
 		if errPullingChart != nil {
+			if _, ok := errPullingChart.(pkg.ErrorHelmRepoNeedsRefresh); ok {
+				r.Log.Info(fmt.Sprintf("refreshing helm repo index"))
+				return ctrl.Result{Requeue: true}, helmV3.RefreshRepoIndex(repoAlias)
+			}
 			return ctrl.Result{}, errPullingChart
 		}
 		defer os.RemoveAll(strings.Split(chartPath, "/")[0])
@@ -156,7 +164,7 @@ func (r *HelmReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error)
 			SkipCRDs:                 !cr.Spec.IncludeCRDs,
 			Force:                    cr.Spec.ForceUpgrade,
 		}
-		if _, errUpgradingRelease := actionConfig.UpgradeRelease(chartPath, upgradeOpts, cr.Spec.ValuesOverride.V); errUpgradingRelease != nil {
+		if _, errUpgradingRelease := helmV3.UpgradeRelease(chartPath, upgradeOpts, cr.Spec.ValuesOverride.V); errUpgradingRelease != nil {
 			return ctrl.Result{}, errUpgradingRelease
 		}
 		r.Log.Info(fmt.Sprintf("Successfully upgraded helm release for %v", req.NamespacedName))

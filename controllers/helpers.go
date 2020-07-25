@@ -67,7 +67,7 @@ func (r *HelmReleaseReconciler) pullChart(namespace, crName, repoAlias, chartNam
 		return "", errLookingUpRepo
 	}
 	r.Log.Info(fmt.Sprintf("downloading chart from %s", repoUrl))
-	chartPath, errDownloadingChart := actionConfig.DownloadChart(repoUrl,
+	chartPath, errDownloadingChart := actionConfig.DownloadChart(repoUrl, repoAlias,
 		chartName, version,
 		username, password,
 		fmt.Sprintf("%v-%v", namespace, crName))

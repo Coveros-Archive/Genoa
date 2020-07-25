@@ -3,10 +3,11 @@ package utils
 import (
 	"context"
 	"coveros.com/api/v1alpha1"
+	"errors"
 	"github.com/ghodss/yaml"
 	"io"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -79,7 +80,7 @@ func CreateNamespace(name string, client client.Client) error {
 	ns := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: name}}
 	err := client.Get(context.TODO(), types.NamespacedName{Name: name}, ns)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if apiErrors.IsNotFound(err) {
 			if err := client.Create(context.TODO(), ns); err != nil {
 				return err
 			}
@@ -101,7 +102,7 @@ func CreateHelmRelease(hr *v1alpha1.HelmRelease, client client.Client) (*v1alpha
 		Name:      hr.GetName(),
 	}, hrFound)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if apiErrors.IsNotFound(err) {
 			return hr, client.Create(context.TODO(), hr)
 		}
 		return nil, err
@@ -133,6 +134,11 @@ func DownloadFile(filepath, url, username, password string) (err error) {
 	if err != nil {
 		return err
 	}
+
+	if resp.StatusCode != 200 {
+		return errors.New("StatusCodeNot200")
+	}
+
 	defer resp.Body.Close()
 
 	// Create the file

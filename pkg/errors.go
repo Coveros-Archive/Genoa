@@ -23,3 +23,11 @@ type ErrorInvalidChartDownloadUrl struct {
 func (e ErrorInvalidChartDownloadUrl) Error() string {
 	return e.Message
 }
+
+type ErrorChartEntryNotFoundInRepoIndex struct {
+	Message string
+}
+
+func (e ErrorChartEntryNotFoundInRepoIndex) Error() string {
+	return e.Message
+}

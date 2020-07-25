@@ -22,3 +22,14 @@ func (h *HelmV3) GetRepoUrlFromRepoConfig(repoAliasName string) (string, string,
 
 	return "", "", "", pkg.ErrorHelmRepoNotFoundInRepoConfig{Message: fmt.Sprintf("%v repo not found repo config, please add it first", repoAliasName)}
 }
+
+func (h *HelmV3) FindDownloadUrlFromCacheFile(repoCacheFile *repo.IndexFile, chartName, chartVersion string) (string, error) {
+	if chartEntries, chartFound := repoCacheFile.Entries[chartName]; chartFound {
+		for _, entry := range chartEntries {
+			if entry.Version == chartVersion {
+				return entry.URLs[0], nil
+			}
+		}
+	}
+	return "", pkg.ErrorChartEntryNotFoundInRepoIndex{Message: fmt.Sprintf("%v-%v chart not found in repo index, a refresh might help", chartName, chartVersion)}
+}

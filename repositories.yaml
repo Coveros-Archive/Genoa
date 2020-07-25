@@ -42,3 +42,10 @@ repositories:
   password: ""
   url: https://aws.github.io/eks-charts
   username: ""
+- caFile: ""
+  certFile: ""
+  keyFile: ""
+  name: codeveros
+  password: ""
+  url: https://coveros.github.io/codeveros
+  username: ""

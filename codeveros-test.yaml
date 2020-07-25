@@ -1,0 +1,13 @@
+apiVersion: coveros.apps.com/v1alpha1
+kind: HelmRelease
+metadata:
+  name: codeveros-ui
+  namespace: default
+spec:
+  chart: codeveros/codeveros-ui
+  version: 0.5.1
+  wait: true
+  waitTimeout: 500
+  values: {}
+---
+

@@ -46,11 +46,6 @@ type HelmReleaseReconciler struct {
 	Cfg    *rest.Config
 }
 
-const (
-	ReleaseFinalizer              = "agill.apps.helmRelease"
-	AutoDeleteNamespaceAnnotation = ReleaseFinalizer + "/autoDeleteNamespace"
-)
-
 // +kubebuilder:rbac:groups=coveros.apps.com,resources=helmreleases,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=coveros.apps.com,resources=helmreleases/status,verbs=get;update;patch
 func (r *HelmReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
@@ -78,7 +73,7 @@ func (r *HelmReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error)
 	}
 
 	// add finalizer
-	if errAddingFinalizer := utils.AddFinalizer(ReleaseFinalizer, r.Client, cr); errAddingFinalizer != nil {
+	if errAddingFinalizer := utils.AddFinalizer(utils.ReleaseFinalizer, r.Client, cr); errAddingFinalizer != nil {
 		return ctrl.Result{}, errAddingFinalizer
 	}
 
@@ -103,11 +98,15 @@ func (r *HelmReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error)
 			defer os.RemoveAll(strings.Split(chartPath, "/")[0])
 
 			installOptions := v3.InstallOptions{
-				Namespace:   hrNamespace,
-				DryRun:      cr.Spec.DryRun,
-				Wait:        cr.Spec.Wait,
-				Timeout:     time.Duration(cr.Spec.WaitTimeout),
-				ReleaseName: hrName,
+				Namespace:                hrNamespace,
+				DryRun:                   cr.Spec.DryRun,
+				Wait:                     cr.Spec.Wait,
+				Timeout:                  time.Duration(cr.Spec.WaitTimeout),
+				ReleaseName:              hrName,
+				DisableHooks:             cr.Spec.DisableHooks,
+				DisableOpenAPIValidation: cr.Spec.DisableOpenAPIValidation,
+				Atomic:                   cr.Spec.Atomic,
+				IncludeCRDs:              cr.Spec.IncludeCRDs,
 			}
 			r.Log.Info(fmt.Sprintf("%v: downloaded chart at %v", req.NamespacedName, chartPath))
 			_, errInstallingChart := actionConfig.InstallRelease(chartPath, installOptions, cr.Spec.ValuesOverride.V)
@@ -145,11 +144,17 @@ func (r *HelmReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error)
 		defer os.RemoveAll(strings.Split(chartPath, "/")[0])
 
 		upgradeOpts := v3.UpgradeOptions{
-			Namespace:   hrNamespace,
-			DryRun:      cr.Spec.DryRun,
-			Wait:        cr.Spec.Wait,
-			Timeout:     time.Duration(cr.Spec.WaitTimeout),
-			ReleaseName: hrName,
+			Namespace:                hrNamespace,
+			DryRun:                   cr.Spec.DryRun,
+			Wait:                     cr.Spec.Wait,
+			Timeout:                  time.Duration(cr.Spec.WaitTimeout),
+			ReleaseName:              hrName,
+			DisableHooks:             cr.Spec.DisableHooks,
+			DisableOpenAPIValidation: cr.Spec.DisableOpenAPIValidation,
+			Atomic:                   cr.Spec.Atomic,
+			CleanupOnFail:            cr.Spec.CleanupOnFail,
+			SkipCRDs:                 !cr.Spec.IncludeCRDs,
+			Force:                    cr.Spec.ForceUpgrade,
 		}
 		if _, errUpgradingRelease := actionConfig.UpgradeRelease(chartPath, upgradeOpts, cr.Spec.ValuesOverride.V); errUpgradingRelease != nil {
 			return ctrl.Result{}, errUpgradingRelease

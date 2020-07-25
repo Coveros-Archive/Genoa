@@ -26,12 +26,39 @@ import (
 
 // HelmReleaseSpec defines the desired state of HelmRelease
 type HelmReleaseSpec struct {
-	Chart          string `json:"chart,required"`
-	Version        string `json:"version,required"`
-	Wait           bool   `json:"wait,required"`
-	WaitTimeout    int    `json:"waitTimeout,omitempty"`
-	DryRun         bool   `json:"dryRun,omitempty"`
-	ValuesOverride Values `json:"values,omitempty"`
+	// +optional
+	Atomic bool `json:"atomic"`
+
+	Chart string `json:"chart,required"`
+
+	// +optional
+	CleanupOnFail bool `json:"cleanupOnFail"`
+
+	// +optional
+	DisableHooks bool `json:"disableHooks"`
+
+	// +optional
+	DisableOpenAPIValidation bool `json:"disableOpenAPIValidation"`
+
+	// +optional
+	ForceUpgrade bool `json:"forceUpgrade"`
+
+	// +optional
+	IncludeCRDs bool `json:"includeCRDS"`
+
+	Version string `json:"version,required"`
+
+	// +optional
+	Wait bool `json:"wait"`
+
+	// +optional
+	WaitTimeout int `json:"waitTimeout"`
+
+	// +optional
+	DryRun bool `json:"dryRun"`
+
+	// +optional
+	ValuesOverride Values `json:"values"`
 }
 
 type Values struct {

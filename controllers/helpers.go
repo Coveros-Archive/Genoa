@@ -19,12 +19,12 @@ func (r *HelmReleaseReconciler) cleanup(cr *v1alpha1.HelmRelease, actionConfig *
 	}
 
 	// second, check if we can delete the namespace
-	if val, ok := cr.GetAnnotations()[AutoDeleteNamespaceAnnotation]; ok && strings.ToLower(val) == "true" {
+	if val, ok := cr.GetAnnotations()[utils.AutoDeleteNamespaceAnnotation]; ok && strings.ToLower(val) == "true" {
 		deleteNamespace = true
 	}
 
 	// third, remove finalizer from CR
-	if errRemovingFinalizer := utils.RemoveFinalizer(ReleaseFinalizer, r.Client, cr); errRemovingFinalizer != nil {
+	if errRemovingFinalizer := utils.RemoveFinalizer(utils.ReleaseFinalizer, r.Client, cr); errRemovingFinalizer != nil {
 		return errRemovingFinalizer
 	}
 

@@ -16,7 +16,6 @@ type InstallOptions struct {
 	Timeout                  time.Duration
 	ReleaseName              string
 	Atomic                   bool
-	SkipCRDs                 bool
 	DisableOpenAPIValidation bool
 	IncludeCRDs              bool
 }
@@ -49,7 +48,6 @@ func (i InstallOptions) setInstallOptions(installAction *action.Install) *action
 	installAction.Namespace = i.Namespace
 	installAction.ReleaseName = i.ReleaseName
 	installAction.Atomic = i.Atomic
-	installAction.SkipCRDs = i.SkipCRDs
 	installAction.DisableOpenAPIValidation = i.DisableOpenAPIValidation
 	installAction.IncludeCRDs = i.IncludeCRDs
 	return installAction

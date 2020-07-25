@@ -10,7 +10,7 @@ import (
 
 func (wH WebhookHandler) syncHelmReleaseWithGithub(owner, repo, branch, releaseFile string, gitClient *github.Client, isRemovedFromGithub bool) {
 
-	log.Info(fmt.Sprintf("Syncing %v from %v/%v into cluster", releaseFile, owner, repo))
+	log.Info(fmt.Sprintf("Attempting to sync %v from %v/%v into cluster", releaseFile, owner, repo))
 	gitFileContents, errReadingFromGit := utils.GetFileContentsFromGitInString(owner, repo, branch, releaseFile, gitClient)
 	if errReadingFromGit != nil {
 		log.Error(errReadingFromGit, "Failed to get fileContents from github")
@@ -30,6 +30,15 @@ func (wH WebhookHandler) syncHelmReleaseWithGithub(owner, repo, branch, releaseF
 
 	if hrFromGit.Spec.ValuesOverride.V == nil {
 		hrFromGit.Spec.ValuesOverride.V = map[string]interface{}{}
+	}
+
+	// if GitBranchToFollowAnnotation is specified, we ONLY create/update CR's if the current source branch is the same as GitBranchToFollow
+	// this way users can have same CR's exist on many branches but only apply updates from the GitBranchToFollow
+	if branchToFollow, ok := hrFromGit.Annotations[utils.GitBranchToFollowAnnotation]; ok && branchToFollow != "" {
+		if branchToFollow != branch {
+			log.Info(fmt.Sprintf("Skipping sync for %v from %v/%v, follow-git-branch '%v' does not match current branch '%v'", hrFromGit.GetName(), owner, repo, branchToFollow, branch))
+			return
+		}
 	}
 
 	if isRemovedFromGithub {

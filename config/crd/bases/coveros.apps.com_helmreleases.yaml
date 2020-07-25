@@ -34,9 +34,21 @@ spec:
         spec:
           description: HelmReleaseSpec defines the desired state of HelmRelease
           properties:
+            atomic:
+              type: boolean
             chart:
               type: string
+            cleanupOnFail:
+              type: boolean
+            disableHooks:
+              type: boolean
+            disableOpenAPIValidation:
+              type: boolean
             dryRun:
+              type: boolean
+            forceUpgrade:
+              type: boolean
+            includeCRDS:
               type: boolean
             values:
               type: object
@@ -49,7 +61,6 @@ spec:
           required:
           - chart
           - version
-          - wait
           type: object
         status:
           description: HelmReleaseStatus defines the observed state of HelmRelease

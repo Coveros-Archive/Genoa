@@ -5,7 +5,5 @@ metadata:
   namespace: codeveros
 spec:
   chart: codeveros/codeveros-ui
-  version: 0.5.0
-  wait: true
-  waitTimeout: 300
-
+  version: 0.5.1
+  wait: false

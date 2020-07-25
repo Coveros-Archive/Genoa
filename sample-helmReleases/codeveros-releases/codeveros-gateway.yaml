@@ -1,0 +1,13 @@
+apiVersion: coveros.apps.com/v1alpha1
+kind: HelmRelease
+metadata:
+  name: codeveros-gateway
+  namespace: codeveros
+spec:
+  chart: codeveros/codeveros-gateway
+  version: 0.3.1
+  wait: true
+  waitTimeout: 300
+  values: {}
+---
+

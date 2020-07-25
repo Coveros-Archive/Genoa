@@ -1,0 +1,50 @@
+apiVersion: coveros.apps.com/v1alpha1
+kind: HelmRelease
+metadata:
+  name: nginx-ingress
+  namespace: ingress
+spec:
+  chart: stable/nginx-ingress
+  version: 1.26.2
+  values:
+    controller:
+      config:
+        ## force-ssl-redirect: true ingress annotation does not out of the box..
+        ## so http -> https does not work as expected
+        ## issue is documented here: https://github.com/kubernetes/ingress-nginx/issues/3826
+        ## and setting the below value + force-ssl-redirect annotation on ingress resource achives the http->https redirect
+        ## https://github.com/kubernetes/ingress-nginx/issues/3826#issuecomment-469734292
+        ## Look into redirecting based on x-forwarded-proto https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/x-forwarded-headers.html#x-forwarded-proto
+        ## As you saw, you can't use force-ssl-redirect because traffic hitting the
+        ## ingress controller will always be HTTP since you are terminating SSL before it reaches nginx.
+        ## You need to detect what protocol the client requested, and redirect only if the client requested HTTP.
+        ## docs.aws.amazon.comdocs.aws.amazon.com
+        ## Learn about the X-Forwarded request headers for Elastic Load Balancing.
+        use-forwarded-headers: "true"
+      service:
+        annotations:
+          # # Ensure the ELB idle timeout is less than nginx keep-alive timeout. By default,
+          # # NGINX keep-alive is set to 75s. If using WebSockets, the value will need to be
+          # # increased to '3600' to avoid any potential issues.
+          # service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "60"
+          service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
+          service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+          service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "arn:aws:acm:us-east-1:216097885821:certificate/307ce2e8-05b5-4803-84e5-633a6d5d90c5"
+        enableHttp: true
+        enableHttps: true
+        ports:
+          http: 80
+          https: 443
+
+        targetPorts:
+          http: http
+          ## because tls traffic will be terminated at ELB, we need to send the traffic to port 80 instead of 443
+          https: 80
+
+        type: LoadBalancer
+        loadBalancerSourceRanges:
+        - 192.30.252.0/22
+        - 185.199.108.0/22
+        - 140.82.112.0/20
+---
+

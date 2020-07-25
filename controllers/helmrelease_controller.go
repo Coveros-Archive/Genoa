@@ -23,11 +23,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-logr/logr"
-	"helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/storage/driver"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
+	"os"
 	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -51,8 +51,8 @@ const (
 	AutoDeleteNamespaceAnnotation = ReleaseFinalizer + "/autoDeleteNamespace"
 )
 
-// +kubebuilder:rbac:groups=coveros.coveros.com,resources=helmreleases,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=coveros.coveros.com,resources=helmreleases/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=coveros.apps.com,resources=helmreleases,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=coveros.apps.com,resources=helmreleases/status,verbs=get;update;patch
 func (r *HelmReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
 	_ = r.Log.WithValues("helmrelease", req.NamespacedName)
@@ -100,6 +100,8 @@ func (r *HelmReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error)
 				return ctrl.Result{}, errPullingChart
 			}
 
+			defer os.RemoveAll(strings.Split(chartPath, "/")[0])
+
 			installOptions := v3.InstallOptions{
 				Namespace:   hrNamespace,
 				DryRun:      cr.Spec.DryRun,
@@ -117,11 +119,7 @@ func (r *HelmReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error)
 		}
 	}
 
-	if releaseInfo.Info.Status == release.StatusPendingInstall ||
-		releaseInfo.Info.Status == release.StatusUninstalling ||
-		releaseInfo.Info.Status == release.StatusPendingRollback ||
-		releaseInfo.Info.Status == release.StatusPendingUpgrade {
-
+	if isReleasePending(releaseInfo) {
 		r.Log.Info(fmt.Sprintf("%v is still in '%v' phase, checking back in a few..", req.NamespacedName, releaseInfo.Info.Status))
 		return ctrl.Result{Requeue: true, RequeueAfter: 30 * time.Second}, nil
 	}
@@ -132,15 +130,20 @@ func (r *HelmReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error)
 	}
 
 	valuesInSync := reflect.DeepEqual(cr.Spec.ValuesOverride.V, releaseValuesOverride)
-
 	chartVersionInSync := cr.Spec.Version == releaseInfo.Chart.Metadata.Version
-	chartNameInSync := cr.Spec.Chart == releaseInfo.Chart.Metadata.Name
+	chartNameInSync := chartName == releaseInfo.Chart.Metadata.Name
 
-	if !valuesInSync || !chartVersionInSync || !chartNameInSync {
+	if !chartNameInSync || !chartVersionInSync || !valuesInSync {
+		r.Log.Info(fmt.Sprintf("%v release values in sync with installed values: %v", req.NamespacedName, valuesInSync))
+		r.Log.Info(fmt.Sprintf("%v release chart version in sync with installed chart version: %v", req.NamespacedName, chartVersionInSync))
+		r.Log.Info(fmt.Sprintf("%v release chart name in sync with installed chart name: %v", req.NamespacedName, chartNameInSync))
+
 		chartPath, errPullingChart := r.pullChart(hrNamespace, hrName, repoAlias, chartName, cr.Spec.Version, actionConfig)
 		if errPullingChart != nil {
 			return ctrl.Result{}, errPullingChart
 		}
+		defer os.RemoveAll(strings.Split(chartPath, "/")[0])
+
 		upgradeOpts := v3.UpgradeOptions{
 			Namespace:   hrNamespace,
 			DryRun:      cr.Spec.DryRun,
@@ -151,6 +154,7 @@ func (r *HelmReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error)
 		if _, errUpgradingRelease := actionConfig.UpgradeRelease(chartPath, upgradeOpts, cr.Spec.ValuesOverride.V); errUpgradingRelease != nil {
 			return ctrl.Result{}, errUpgradingRelease
 		}
+		r.Log.Info(fmt.Sprintf("Successfully upgraded helm release for %v", req.NamespacedName))
 	}
 
 	return ctrl.Result{}, nil

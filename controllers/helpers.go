@@ -6,6 +6,7 @@ import (
 	v3 "coveros.com/pkg/helm/v3"
 	"coveros.com/pkg/utils"
 	"fmt"
+	"helm.sh/helm/v3/pkg/release"
 	"strings"
 )
 
@@ -74,4 +75,14 @@ func (r *HelmReleaseReconciler) pullChart(namespace, crName, repoAlias, chartNam
 		return "", errDownloadingChart
 	}
 	return chartPath, nil
+}
+
+func isReleasePending(releaseInfo *release.Release) bool {
+	if releaseInfo.Info.Status == release.StatusPendingInstall ||
+		releaseInfo.Info.Status == release.StatusUninstalling ||
+		releaseInfo.Info.Status == release.StatusPendingRollback ||
+		releaseInfo.Info.Status == release.StatusPendingUpgrade {
+		return true
+	}
+	return false
 }

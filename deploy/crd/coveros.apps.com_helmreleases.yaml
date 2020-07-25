@@ -6,9 +6,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.5
   creationTimestamp: null
-  name: helmreleases.coveros.coveros.com
+  name: helmreleases.coveros.apps.com
 spec:
-  group: coveros.coveros.com
+  group: coveros.apps.com
   names:
     kind: HelmRelease
     listKind: HelmReleaseList

@@ -43,7 +43,7 @@ spec:
             httpGet:
               port: 8081
               path: /health
-            initialDelaySeconds: 30
+            initialDelaySeconds: 10
             periodSeconds: 30
             timeoutSeconds: 10
             successThreshold: 1

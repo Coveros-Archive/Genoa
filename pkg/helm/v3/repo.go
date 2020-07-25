@@ -20,5 +20,5 @@ func (h *HelmV3) GetRepoUrlFromRepoConfig(repoAliasName string) (string, string,
 		}
 	}
 
-	return "", "", "", pkg.ErrorHelmRepoNotFoundInRepoConfig{Message: fmt.Sprintf("%v repo not found repo config", repoAliasName)}
+	return "", "", "", pkg.ErrorHelmRepoNotFoundInRepoConfig{Message: fmt.Sprintf("%v repo not found repo config, please add it first", repoAliasName)}
 }

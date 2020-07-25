@@ -1,4 +1,4 @@
-apiVersion: coveros.coveros.com/v1alpha1
+apiVersion: coveros.apps.com/v1alpha1
 kind: HelmRelease
 metadata:
   name: jenkins

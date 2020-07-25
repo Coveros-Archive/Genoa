@@ -5,7 +5,7 @@ metadata:
   name: helmrelease-editor-role
 rules:
 - apiGroups:
-  - coveros.coveros.com
+  - coveros.apps.com
   resources:
   - helmreleases
   verbs:
@@ -17,7 +17,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - coveros.coveros.com
+  - coveros.apps.com
   resources:
   - helmreleases/status
   verbs:

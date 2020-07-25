@@ -4,11 +4,14 @@ import (
 	"context"
 	"coveros.com/api/v1alpha1"
 	"github.com/ghodss/yaml"
+	"io"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"net/http"
+	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"strings"
@@ -113,4 +116,34 @@ func TrimSuffix(s, suffix string) string {
 		s = s[:len(s)-len(suffix)]
 	}
 	return s
+}
+
+func DownloadFile(filepath, url, username, password string) (err error) {
+
+	client := &http.Client{}
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return err
+	}
+
+	if username != "" && password != "" {
+		req.SetBasicAuth(username, password)
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Create the file
+	out, err := os.Create(filepath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	// Write the body to file
+	_, err = io.Copy(out, resp.Body)
+	return err
+
 }

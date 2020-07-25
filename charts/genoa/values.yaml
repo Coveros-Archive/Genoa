@@ -23,25 +23,25 @@ deployment:
     httpGet:
       port: 8081
       path: /health
-      initialDelaySeconds: 10
-      periodSeconds: 30
-      timeoutSeconds: 10
-      successThreshold: 1
-      failureThreshold: 3
-  resources:
-    limits:
-      cpu: 500m
-      # recommended when running 10 workers.
-      # if running <= 5 workers; then the limit can be 500Mi.
-      # This number can also fluctuate based on the size of chart being installed ( for example, installing 10 prometheus-operators all at the same time could consume upto 5Gi memory because of helm hooks )
-      memory: 1Gi
-    requests:
-      cpu: 100m
-      memory: 500Mi
+    initialDelaySeconds: 10
+    periodSeconds: 30
+    timeoutSeconds: 10
+    successThreshold: 1
+    failureThreshold: 3
+  resources: {}
+#    limits:
+#      cpu: 500m
+#      # recommended when running 10 workers.
+#      # if running <= 5 workers; then the limit can be 500Mi.
+#      # This number can also fluctuate based on the size of chart being installed ( for example, installing 10 prometheus-operators all at the same time could consume upto 5Gi memory because of helm hooks )
+#      memory: 1Gi
+#    requests:
+#      cpu: 100m
+#      memory: 500Mi
 
 config:
   deployDirectory: dir/on/github/to/deploy/helmReleases/from
-  webhookSecret: ""
+  webhookSecret: "required-secret"
   helmRepos: |
     apiVersion: v1
     repositories:

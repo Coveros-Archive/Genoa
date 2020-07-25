@@ -27,10 +27,12 @@ spec:
       {{- if .Values.deployment.podLabels }}
 {{ toYaml .Values.deployment.podLabels | indent 8 }}
       {{- end }}
-      {{- if .Values.deployment.podAnnotations }}
       annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- if .Values.deployment.podAnnotations }}
 {{ toYaml .Values.deployment.podAnnotations | indent 8 }}
-      {{- end }}
+        {{- end }}
     spec:
       {{- if .Values.deployment.nodeSelector }}
       nodeSelector:

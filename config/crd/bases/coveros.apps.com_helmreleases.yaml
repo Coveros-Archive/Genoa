@@ -8,6 +8,22 @@ metadata:
   creationTimestamp: null
   name: helmreleases.coveros.apps.com
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .metadata.name
+    name: release-name
+    type: string
+  - JSONPath: .metadata.namespace
+    name: release-namespace
+    type: string
+  - JSONPath: .spec.chart
+    name: chart
+    type: string
+  - JSONPath: .spec.version
+    name: chart-version
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: age
+    type: date
   group: coveros.apps.com
   names:
     kind: HelmRelease
@@ -15,6 +31,7 @@ spec:
     plural: helmreleases
     singular: helmrelease
   scope: Namespaced
+  subresources: {}
   validation:
     openAPIV3Schema:
       description: HelmRelease is the Schema for the helmreleases API

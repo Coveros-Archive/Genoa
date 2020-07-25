@@ -106,6 +106,11 @@ type HelmReleaseStatus struct {
 // +kubebuilder:object:root=true
 
 // HelmRelease is the Schema for the helmreleases API
+// +kubebuilder:printcolumn:name="release-name",type=string,JSONPath=.metadata.name
+// +kubebuilder:printcolumn:name="release-namespace",type=string,JSONPath=.metadata.namespace
+// +kubebuilder:printcolumn:name="chart",type=string,JSONPath=.spec.chart
+// +kubebuilder:printcolumn:name="chart-version",type=string,JSONPath=.spec.version
+// +kubebuilder:printcolumn:name="age",type=date,JSONPath=.metadata.creationTimestamp
 type HelmRelease struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

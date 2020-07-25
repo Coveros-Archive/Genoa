@@ -55,6 +55,9 @@ config:
 
 extraConfigMaps: []
 
+## because helm client inside operator would need freedom to install releases
+clusterRole: cluster-admin
+
 ingress:
   enabled: false
   labels: {}

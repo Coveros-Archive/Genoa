@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"helm.sh/helm/v3/pkg/getter"
 	"helm.sh/helm/v3/pkg/repo"
+	"os"
 	"strings"
 )
 
@@ -36,6 +37,23 @@ func (h *HelmV3) FindDownloadUrlFromCacheFile(repoCacheFile *repo.IndexFile, cha
 		}
 	}
 	return "", pkg.ErrorHelmRepoNeedsRefresh{Message: fmt.Sprintf("%v-%v chart not found in repo index, a refresh might help", chartName, chartVersion)}
+}
+
+func AddReposFromFile(customRepoFile string) error {
+	repoFile, errGettingRepoFile := repo.LoadFile(DefaultEnvSettings().RepositoryConfig)
+	if errGettingRepoFile != nil {
+		return errGettingRepoFile
+	}
+
+	customRepo, errGettingCustomRepoFile := repo.LoadFile(customRepoFile)
+	if errGettingCustomRepoFile != nil {
+		return errGettingCustomRepoFile
+	}
+
+	for _, customRepoEntry := range customRepo.Repositories {
+		repoFile.Update(customRepoEntry)
+	}
+	return repoFile.WriteFile(DefaultEnvSettings().RepositoryConfig, os.ModePerm)
 }
 
 func (h *HelmV3) RefreshRepoIndex(repoAlias string) error {

@@ -18,6 +18,7 @@ package main
 
 import (
 	"coveros.com/pkg/gitSync"
+	v3 "coveros.com/pkg/helm/v3"
 	"flag"
 	"fmt"
 	"net/http"
@@ -50,10 +51,12 @@ func init() {
 func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
+	var customRepoConfigPath string
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+	flag.StringVar(&customRepoConfigPath, "custom-helm-repos-file", "", "Your own custom helm repo files")
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
@@ -70,6 +73,13 @@ func main() {
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
+	}
+
+	if customRepoConfigPath != "" {
+		if errAddingCustomRepos := v3.AddReposFromFile(customRepoConfigPath); errAddingCustomRepos != nil {
+			setupLog.Error(errAddingCustomRepos, "Failed to add custom helm repos")
+			os.Exit(1)
+		}
 	}
 
 	go func() {

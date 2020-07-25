@@ -11,6 +11,14 @@ metadata:
   name: genoa
   namespace: genoa
 ---
+apiVersion: v1
+data:
+  custom-helm-repos-config.yaml: YXBpVmVyc2lvbjogdjEKcmVwb3NpdG9yaWVzOgotIGNhRmlsZTogIiIKICBjZXJ0RmlsZTogIiIKICBrZXlGaWxlOiAiIgogIG5hbWU6IGNvZGV2ZXJvcwogIHBhc3N3b3JkOiAiIgogIHVybDogaHR0cHM6Ly9jb3Zlcm9zLmdpdGh1Yi5pby9jb2RldmVyb3MKICB1c2VybmFtZTogIiI=
+kind: Secret
+metadata:
+  name: custom-helm-repos
+  namespace: genoa
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -29,13 +37,21 @@ spec:
         name: genoa
     spec:
       serviceAccountName: genoa
+      volumes:
+        - name: custom-helm-repos
+          secret:
+            secretName: custom-helm-repos
       containers:
         - command:
             - /genoa
           args:
             - --enable-leader-election
+            - --custom-helm-repos-file=/tmp/custom-helm-repos-config.yaml
           image: agill17/genoa:0.1.0
           imagePullPolicy: Always
+          volumeMounts:
+            - mountPath: /tmp
+              name: custom-helm-repos
           name: genoa
           ports:
             - containerPort: 8081 # for github webhook
@@ -48,16 +64,16 @@ spec:
             timeoutSeconds: 10
             successThreshold: 1
             failureThreshold: 3
-          resources:
-            limits:
-              cpu: 500m
-              # recommended when running 10 workers.
-              # if running <= 5 workers; then the limit can be 500Mi.
-              # This number can also fluctuate based on the size of chart being installed ( for example, installing 10 prometheus-operators could consume upto 5Gi memory because of helm hooks )
-              memory: 1Gi
-            requests:
-              cpu: 100m
-              memory: 500Mi
+#          resources:
+#            limits:
+#              cpu: 500m
+#              # recommended when running 10 workers.
+#              # if running <= 5 workers; then the limit can be 500Mi.
+#              # This number can also fluctuate based on the size of chart being installed ( for example, installing 10 prometheus-operators could consume upto 5Gi memory because of helm hooks )
+#              memory: 1Gi
+#            requests:
+#              cpu: 100m
+#              memory: 500Mi
           env:
             - name: DEPLOY_DIRECTORY
               value: "sample-helmReleases"

@@ -1,0 +1,27 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: {{ include "genoa.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  {{- if .Values.ingress.labels }}
+  labels:
+{{ toYaml .Values.ingress.labels | indent 4 }}
+  {{- end }}
+  {{- if .Values.ingress.annotations }}
+  annotations:
+{{ toYaml .Values.ingress.annotations | indent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.ingress.tls }}
+{{ toYaml .Values.ingress.tls | indent 2 }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+          - path: /webhook
+            backend:
+              serviceName: {{ include "genoa.fullname" . }}
+              servicePort: 8081
+{{- end }}

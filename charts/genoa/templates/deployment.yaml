@@ -1,0 +1,89 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "genoa.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  {{- if .Values.deployment.labels }}
+  labels:
+{{ toYaml .Values.deployment.labels | indent 4 }}
+  {{- end }}
+  {{- if .Values.deployment.annotations }}
+  annotations:
+{{ toYaml .Values.deployment.annotations | indent 4 }}
+  {{- end }}
+spec:
+  selector:
+    matchLabels:
+      name: genoa
+      {{- if .Values.deployment.podLabels }}
+{{ toYaml .Values.deployment.podLabels | indent 6 }}
+      {{- end }}
+  replicas: {{ .Values.deployment.replicaCount | default 1 }}
+  template:
+    metadata:
+      labels:
+        name: genoa
+      {{- if .Values.deployment.podLabels }}
+{{ toYaml .Values.deployment.podLabels | indent 8 }}
+      {{- end }}
+      {{- if .Values.deployment.podAnnotations }}
+      annotations:
+{{ toYaml .Values.deployment.podAnnotations | indent 8 }}
+      {{- end }}
+    spec:
+      {{- if .Values.deployment.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.deployment.nodeSelector | indent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "genoa.fullname" . }}
+      volumes:
+      - name: additional-helm-repos
+        secret:
+          secretName: additional-helm-repos
+      {{- if .Values.deployment.volumes }}
+{{ toYaml .Values.deployment.volumes | indent 6 }}
+      {{- end }}
+      {{- if .Values.deployment.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.deployment.imagePullSecrets | indent 6 }}
+      {{- end }}
+      {{- if .Values.deployment.initContainers }}
+      initContainers:
+{{- toYaml .Values.deployment.initContainers | indent 6 }}
+      {{- end }}
+      containers:
+      - name: {{ include "genoa.fullname" . }}
+        command:
+        - /genoa
+        args:
+        - --enable-leader-election
+        - --custom-helm-repos-file=/tmp/additional-helm-repos-config.yaml
+        image: {{ .Values.deployment.image.repository }}:{{ .Values.deployment.image.tag }}
+        imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
+        volumeMounts:
+        - mountPath: /tmp
+          name: additional-helm-repos
+        {{- if .Values.deployment.volumeMounts }}
+{{ toYaml .Values.deployment.volumeMounts | indent 8 }}
+        {{- end }}
+        ports:
+        - containerPort: 8081
+        {{- if .Values.deployment.livenessProbe }}
+        livenessProbe:
+{{ toYaml .Values.deployment.livenessProbe | indent 10  }}
+        {{- end }}
+        {{- if .Values.deployment.resources }}
+        resources:
+{{ toYaml .Values.deployment.resources | indent 10 }}
+        {{- end }}
+        envFrom:
+        - secretRef:
+            name: {{ include "genoa.fullname" . }}
+        - configMapRef:
+            name: {{ include "genoa.fullname" . }}
+        {{- if .Values.deployment.envVars }}
+        env:
+{{ toYaml .Values.deployment.envVars | indent 8 }}
+        {{- end }}
+

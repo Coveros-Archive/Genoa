@@ -8,10 +8,14 @@ import (
 	"reflect"
 )
 
-func (wH WebhookHandler) syncHelmReleaseWithGithub(owner, repo, branch, releaseFile string, gitClient *github.Client, isRemovedFromGithub bool) {
+func (wH WebhookHandler) syncHelmReleaseWithGithub(owner, repo, branch, SHA, releaseFile string, gitClient *github.Client, isRemovedFromGithub bool) {
+	var readFileFrom = branch
+	if isRemovedFromGithub {
+		readFileFrom = SHA
+	}
 
 	log.Info(fmt.Sprintf("Attempting to sync %v from %v/%v into cluster", releaseFile, owner, repo))
-	gitFileContents, errReadingFromGit := utils.GetFileContentsFromGitInString(owner, repo, branch, releaseFile, gitClient)
+	gitFileContents, errReadingFromGit := utils.GetFileContentsFromGitInString(owner, repo, readFileFrom, releaseFile, gitClient)
 	if errReadingFromGit != nil {
 		log.Error(errReadingFromGit, "Failed to get fileContents from github")
 		return

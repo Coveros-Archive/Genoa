@@ -86,6 +86,7 @@ func (wH WebhookHandler) handleGithubPushEvents(e *github.PushEvent) {
 						e.GetRepo().GetOwner().GetName(),
 						e.GetRepo().GetName(),
 						strings.Replace(*e.Ref, "refs/heads/", "", -1),
+						commit.GetSHA(),
 						eAdded, gitClient, false)
 				}
 			}
@@ -98,6 +99,7 @@ func (wH WebhookHandler) handleGithubPushEvents(e *github.PushEvent) {
 						e.GetRepo().GetOwner().GetName(),
 						e.GetRepo().GetName(),
 						strings.Replace(*e.Ref, "refs/heads/", "", -1),
+						commit.GetSHA(),
 						eModified, gitClient, false)
 				}
 			}
@@ -109,6 +111,7 @@ func (wH WebhookHandler) handleGithubPushEvents(e *github.PushEvent) {
 					wH.syncHelmReleaseWithGithub(
 						e.GetRepo().GetOwner().GetName(),
 						e.GetRepo().GetName(),
+						strings.Replace(*e.Ref, "refs/heads/", "", -1),
 						e.GetBefore(),
 						eRemoved, gitClient, true)
 				}

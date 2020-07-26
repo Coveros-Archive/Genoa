@@ -77,7 +77,6 @@ func parseWebhookPayload(req *http.Request) (interface{}, error) {
 
 func (wH WebhookHandler) handleGithubPushEvents(e *github.PushEvent) {
 	gitClient := utils.NewGitClient(GithubAccessToken)
-	log.Info(GithubAccessToken)
 	for _, commit := range e.Commits {
 
 		if len(commit.Added) > 0 {

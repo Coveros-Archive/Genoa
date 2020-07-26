@@ -1,0 +1,14 @@
+apiVersion: coveros.apps.com/v1alpha1
+kind: HelmRelease
+metadata:
+  name: artifactory
+  namespace: artifactory
+spec:
+  chart: stable/artifactory
+  version: 7.3.1
+  wait: false
+  values:
+    ingress:
+      enabled: true
+      hosts:
+      - artifactory.amritgill.ml

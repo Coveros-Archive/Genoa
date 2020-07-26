@@ -10,3 +10,17 @@ spec:
   values:
     grafana:
       adminPassword: password
+      ingress:
+        enabled: true
+        hosts:
+        - graph.amritgill.ml
+    alertManager:
+      ingress:
+        enabled: true
+        hosts:
+        - alerts.amritgill.ml
+    prometheus:
+      ingress:
+        enabled: true
+        hosts:
+        - prometheus.amritgill.ml

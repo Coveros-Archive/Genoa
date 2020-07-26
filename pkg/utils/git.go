@@ -4,10 +4,16 @@ import (
 	"context"
 	"encoding/base64"
 	"github.com/google/go-github/github"
+	"golang.org/x/oauth2"
 )
 
-func NewGitClient() *github.Client {
-	return github.NewClient(nil)
+func NewGitClient(accessToken string) *github.Client {
+	// https://github.com/google/go-github#authentication
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: accessToken},
+	)
+	tc := oauth2.NewClient(context.TODO(), ts)
+	return github.NewClient(tc)
 }
 
 func GetFileContentsFromGitInString(owner, repo, branch, file string, gClient *github.Client) (string, error) {

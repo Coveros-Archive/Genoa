@@ -12,12 +12,15 @@ import (
 )
 
 const (
-	EnvVarReleaseFilesDir = "DEPLOY_DIRECTORY"
-	EnvVarWebhookSecret   = "WEBHOOK_SECRET"
+	EnvVarReleaseFilesDir           = "DEPLOY_DIRECTORY"
+	EnvVarWebhookSecret             = "WEBHOOK_SECRET"
+	EnvVarGithubPersonalAccessToken = "GITHUB_PERSONAL_ACCESS_TOKEN"
 )
 
 var ReleaseFilesDir string
 var WebhookSecret string
+var GithubAccessToken string
+
 var log = logf.Log.WithName("gitSync.webhookHandler")
 
 type WebhookHandler struct {
@@ -31,6 +34,10 @@ func init() {
 
 	if val, ok := os.LookupEnv(EnvVarWebhookSecret); ok {
 		WebhookSecret = val
+	}
+
+	if val, ok := os.LookupEnv(EnvVarGithubPersonalAccessToken); ok {
+		GithubAccessToken = val
 	}
 }
 
@@ -69,6 +76,8 @@ func parseWebhookPayload(req *http.Request) (interface{}, error) {
 }
 
 func (wH WebhookHandler) handleGithubPushEvents(e *github.PushEvent) {
+	gitClient := utils.NewGitClient(GithubAccessToken)
+	log.Info(GithubAccessToken)
 	for _, commit := range e.Commits {
 
 		if len(commit.Added) > 0 {
@@ -78,7 +87,7 @@ func (wH WebhookHandler) handleGithubPushEvents(e *github.PushEvent) {
 						e.GetRepo().GetOwner().GetName(),
 						e.GetRepo().GetName(),
 						strings.Replace(*e.Ref, "refs/heads/", "", -1),
-						eAdded, utils.NewGitClient(), false)
+						eAdded, gitClient, false)
 				}
 			}
 		}
@@ -90,7 +99,7 @@ func (wH WebhookHandler) handleGithubPushEvents(e *github.PushEvent) {
 						e.GetRepo().GetOwner().GetName(),
 						e.GetRepo().GetName(),
 						strings.Replace(*e.Ref, "refs/heads/", "", -1),
-						eModified, utils.NewGitClient(), false)
+						eModified, gitClient, false)
 				}
 			}
 		}
@@ -102,7 +111,7 @@ func (wH WebhookHandler) handleGithubPushEvents(e *github.PushEvent) {
 						e.GetRepo().GetOwner().GetName(),
 						e.GetRepo().GetName(),
 						e.GetBefore(),
-						eRemoved, utils.NewGitClient(), true)
+						eRemoved, gitClient, true)
 				}
 			}
 		}

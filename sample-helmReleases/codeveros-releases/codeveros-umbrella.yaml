@@ -1,0 +1,14 @@
+apiVersion: coveros.apps.com/v1alpha1
+kind: HelmRelease
+metadata:
+  name: codeveros-auth-service
+  namespace: codeveros
+spec:
+  chart: codeveros/codeveros
+  version: 0.1.1
+  wait: true
+  waitTimeout: 500
+  values:
+    ingress:
+      enabled: true
+      hostName: codeveros.amritgill.ml

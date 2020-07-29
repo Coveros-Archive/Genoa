@@ -2,6 +2,7 @@ package gitSync
 
 import (
 	"coveros.com/pkg/factories/git"
+	"fmt"
 	"github.com/google/go-github/github"
 	"net/http"
 	"os"
@@ -42,8 +43,9 @@ func init() {
 }
 
 func (wH WebhookHandler) HandleWebhook(w http.ResponseWriter, r *http.Request) {
-	//TODO: based on the payload, we should switch between github, gitlab, etc but I dont know what to switch it based off of yet
-	git := git.GitFactory(git.GITHUB, GithubAccessToken)
+	// based on the payload, we switch between github, gitlab, etc
+	git := git.GitFactory(r, GithubAccessToken)
+	log.Info(fmt.Sprintf("Webhook provider: %T", git))
 	eventType, errParsingWebhookReq := git.ParseWebhook(r, WebhookSecret)
 	if errParsingWebhookReq != nil {
 		return

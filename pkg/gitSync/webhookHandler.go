@@ -1,7 +1,7 @@
 package gitSync
 
 import (
-	"coveros.com/pkg/utils"
+	"coveros.com/pkg/factories/git"
 	"github.com/google/go-github/github"
 	"net/http"
 	"os"
@@ -42,41 +42,23 @@ func init() {
 }
 
 func (wH WebhookHandler) HandleWebhook(w http.ResponseWriter, r *http.Request) {
-
-	event, err := parseWebhookPayload(r)
-	if err != nil {
+	//TODO: based on the payload, we should switch between github, gitlab, etc but I dont know what to switch it based off of yet
+	git := git.GitFactory(git.GITHUB, GithubAccessToken)
+	eventType, errParsingWebhookReq := git.ParseWebhook(r, WebhookSecret)
+	if errParsingWebhookReq != nil {
 		return
 	}
 
-	switch e := event.(type) {
+	switch e := eventType.(type) {
 	case *github.PushEvent:
-		wH.handleGithubPushEvents(e)
+		wH.handleGithubPushEvents(e, git)
 	default:
-		log.Info("Github webhook event type not supported: %T ... skipping...", github.WebHookType(r))
+		log.Info("Git webhook event type not supported: %T ... skipping...", github.WebHookType(r))
 		return
 	}
 }
 
-func parseWebhookPayload(req *http.Request) (interface{}, error) {
-	payload, err := github.ValidatePayload(req, []byte(WebhookSecret))
-	if err != nil {
-		log.Error(err, "error reading github request body")
-		return nil, err
-	}
-	defer req.Body.Close()
-
-	event, err := github.ParseWebHook(github.WebHookType(req), payload)
-	if err != nil {
-		log.Error(err, "could not parse webhook payload")
-		return nil, err
-	}
-
-	return event, nil
-
-}
-
-func (wH WebhookHandler) handleGithubPushEvents(e *github.PushEvent) {
-	gitClient := utils.NewGitClient(GithubAccessToken)
+func (wH WebhookHandler) handleGithubPushEvents(e *github.PushEvent, git git.Git) {
 	for _, commit := range e.Commits {
 
 		if len(commit.Added) > 0 {
@@ -87,7 +69,7 @@ func (wH WebhookHandler) handleGithubPushEvents(e *github.PushEvent) {
 						e.GetRepo().GetName(),
 						strings.Replace(*e.Ref, "refs/heads/", "", -1),
 						commit.GetSHA(),
-						eAdded, gitClient, false)
+						eAdded, git, false)
 				}
 			}
 		}
@@ -100,7 +82,7 @@ func (wH WebhookHandler) handleGithubPushEvents(e *github.PushEvent) {
 						e.GetRepo().GetName(),
 						strings.Replace(*e.Ref, "refs/heads/", "", -1),
 						commit.GetSHA(),
-						eModified, gitClient, false)
+						eModified, git, false)
 				}
 			}
 		}
@@ -113,7 +95,7 @@ func (wH WebhookHandler) handleGithubPushEvents(e *github.PushEvent) {
 						e.GetRepo().GetName(),
 						strings.Replace(*e.Ref, "refs/heads/", "", -1),
 						e.GetBefore(),
-						eRemoved, gitClient, true)
+						eRemoved, git, true)
 				}
 			}
 		}

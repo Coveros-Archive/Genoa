@@ -2,20 +2,21 @@ package gitSync
 
 import (
 	"context"
+	"coveros.com/pkg/factories/git"
 	"coveros.com/pkg/utils"
 	"fmt"
-	"github.com/google/go-github/github"
+	_ "github.com/google/go-github/github"
 	"reflect"
 )
 
-func (wH WebhookHandler) syncHelmReleaseWithGithub(owner, repo, branch, SHA, releaseFile string, gitClient *github.Client, isRemovedFromGithub bool) {
+func (wH WebhookHandler) syncHelmReleaseWithGithub(owner, repo, branch, SHA, releaseFile string, gitFactory git.Git, isRemovedFromGithub bool) {
 	var readFileFrom = branch
 	if isRemovedFromGithub {
 		readFileFrom = SHA
 	}
 
 	log.Info(fmt.Sprintf("Attempting to sync %v from %v/%v into cluster", releaseFile, owner, repo))
-	gitFileContents, errReadingFromGit := utils.GetFileContentsFromGitInString(owner, repo, readFileFrom, releaseFile, gitClient)
+	gitFileContents, errReadingFromGit := gitFactory.GetFileContents(owner, repo, readFileFrom, releaseFile)
 	if errReadingFromGit != nil {
 		log.Error(errReadingFromGit, "Failed to get fileContents from github")
 		return

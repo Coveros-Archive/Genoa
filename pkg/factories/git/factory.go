@@ -31,9 +31,7 @@ func GitFactory(req *http.Request, token string) Git {
 
 // custom push event struct to deal with factory pattern for diff git providers
 type PushEventMeta struct {
-	Head    string
 	Ref     string
-	Size    int
 	Commits []Commit
 	SHA     string
 	Before  string

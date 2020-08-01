@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	lab "github.com/xanzy/go-gitlab"
 )
@@ -53,15 +54,14 @@ func (g *gitlab) PushEventToPushEventMeta(pushEvent interface{}) *PushEventMeta 
 	if !ok {
 		return nil
 	}
-
+	ownerRepo := strings.Split(pE.Project.PathWithNamespace, "/")
 	pEMeta := &PushEventMeta{
-		Head:   pE.CheckoutSHA,
-		Ref:    pE.Ref,
-		Size:   pE.TotalCommitsCount,
-		Before: pE.Before,
-		After:  pE.After,
-		Repo:   pE.Project.Name,
-		Owner:  pE.Project.Namespace,
+		Ref:     pE.Ref,
+		Before:  pE.Before,
+		After:   pE.After,
+		Repo:    ownerRepo[1],
+		Owner:   ownerRepo[0],
+		Commits: make([]Commit, len(pE.Commits)),
 	}
 
 	for i := 0; i <= len(pE.Commits)-1; i++ {

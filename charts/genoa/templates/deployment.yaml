@@ -28,7 +28,6 @@ spec:
 {{ toYaml .Values.deployment.podLabels | indent 8 }}
       {{- end }}
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
         {{- if .Values.deployment.podAnnotations }}
 {{ toYaml .Values.deployment.podAnnotations | indent 8 }}
@@ -81,8 +80,6 @@ spec:
         {{- end }}
         envFrom:
         - secretRef:
-            name: {{ include "genoa.fullname" . }}
-        - configMapRef:
             name: {{ include "genoa.fullname" . }}
         {{- if .Values.deployment.envVars }}
         env:

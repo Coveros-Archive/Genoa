@@ -48,15 +48,13 @@ func (g *github) PushEventToPushEventMeta(pushEvent interface{}) *PushEventMeta 
 	}
 
 	pEMeta := &PushEventMeta{
-		Head:   *pE.Head,
-		Ref:    *pE.Ref,
-		Size:   *pE.Size,
-		Before: *pE.Before,
-		After:  *pE.After,
-		Repo:   *pE.Repo.Name,
-		Owner:  *pE.Repo.Owner.Name,
+		Ref:     *pE.Ref,
+		Before:  *pE.Before,
+		After:   *pE.After,
+		Repo:    *pE.Repo.Name,
+		Owner:   *pE.Repo.Owner.Name,
+		Commits: make([]Commit, len(pE.Commits)),
 	}
-
 	for i := 0; i <= len(pE.Commits)-1; i++ {
 		pEMeta.Commits[i].Added = pE.Commits[i].Added
 		pEMeta.Commits[i].Removed = pE.Commits[i].Removed

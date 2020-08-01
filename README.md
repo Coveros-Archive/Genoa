@@ -1,5 +1,5 @@
 # Genoa
-WIP: Opinionated webhook based GitOps controller that installs and manages helm (v3) releases from configured github repositories
+WIP: Opinionated webhook based GitOps controller that installs and manages helm (v3) releases from configured github/gitlab repositories
 
 ## Installing the Chart
 You can install the chart with the release name `genoa` as below.

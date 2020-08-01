@@ -8,3 +8,5 @@ You can install the chart with the release name `genoa` as below.
 $ kubectl create ns genoa
 $ helm upgrade genoa charts/genoa --install --namespace=genoa
 ```
+
+![image info](./pictures/genoa.png)

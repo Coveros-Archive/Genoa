@@ -1,4 +1,4 @@
-package github
+package git
 
 import (
 	"context"
@@ -7,6 +7,11 @@ import (
 	"golang.org/x/oauth2"
 	"net/http"
 )
+
+type github struct {
+	token  string
+	client *googleGithub.Client
+}
 
 func NewGithub(token string) *github {
 	ts := oauth2.StaticTokenSource(
@@ -34,4 +39,30 @@ func (g *github) ParseWebhook(req *http.Request, webhookSecret string) (interfac
 	}
 	defer req.Body.Close()
 	return googleGithub.ParseWebHook(googleGithub.WebHookType(req), payload)
+}
+
+func (g *github) PushEventToPushEventMeta(pushEvent interface{}) *PushEventMeta {
+	pE, ok := pushEvent.(*googleGithub.PushEvent)
+	if !ok {
+		return nil
+	}
+
+	pEMeta := &PushEventMeta{
+		Head:   *pE.Head,
+		Ref:    *pE.Ref,
+		Size:   *pE.Size,
+		Before: *pE.Before,
+		After:  *pE.After,
+		Repo:   *pE.Repo.Name,
+		Owner:  *pE.Repo.Owner.Name,
+	}
+
+	for i := 0; i <= len(pE.Commits)-1; i++ {
+		pEMeta.Commits[i].Added = pE.Commits[i].Added
+		pEMeta.Commits[i].Removed = pE.Commits[i].Removed
+		pEMeta.Commits[i].Modified = pE.Commits[i].Modified
+		pEMeta.Commits[i].SHA = pE.Commits[i].GetSHA()
+	}
+
+	return pEMeta
 }

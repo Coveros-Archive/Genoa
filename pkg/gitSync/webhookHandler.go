@@ -4,6 +4,7 @@ import (
 	"coveros.com/pkg/factories/git"
 	"fmt"
 	"github.com/google/go-github/github"
+	lab "github.com/xanzy/go-gitlab"
 	"net/http"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -48,29 +49,28 @@ func (wH WebhookHandler) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 	log.Info(fmt.Sprintf("Webhook provider: %T", git))
 	eventType, errParsingWebhookReq := git.ParseWebhook(r, WebhookSecret)
 	if errParsingWebhookReq != nil {
+		log.Error(errParsingWebhookReq, "Failed to parse git webhook")
 		return
 	}
-
 	switch e := eventType.(type) {
-	case *github.PushEvent:
-		wH.handleGithubPushEvents(e, git)
+	case *github.PushEvent, *lab.PushEvent:
+		wH.handleGitPushEvents(git.PushEventToPushEventMeta(e), git)
 	default:
 		log.Info("Git webhook event type not supported: %T ... skipping...", github.WebHookType(r))
 		return
 	}
 }
 
-func (wH WebhookHandler) handleGithubPushEvents(e *github.PushEvent, git git.Git) {
+func (wH WebhookHandler) handleGitPushEvents(e *git.PushEventMeta, git git.Git) {
 	for _, commit := range e.Commits {
 
 		if len(commit.Added) > 0 {
 			for _, eAdded := range commit.Added {
 				if strings.HasPrefix(eAdded, ReleaseFilesDir) {
 					wH.syncHelmReleaseWithGithub(
-						e.GetRepo().GetOwner().GetName(),
-						e.GetRepo().GetName(),
-						strings.Replace(*e.Ref, "refs/heads/", "", -1),
-						commit.GetSHA(),
+						e.Owner, e.Repo,
+						strings.Replace(e.Ref, "refs/heads/", "", -1),
+						commit.SHA,
 						eAdded, git, false)
 				}
 			}
@@ -80,10 +80,9 @@ func (wH WebhookHandler) handleGithubPushEvents(e *github.PushEvent, git git.Git
 			for _, eModified := range commit.Modified {
 				if strings.HasPrefix(eModified, ReleaseFilesDir) {
 					wH.syncHelmReleaseWithGithub(
-						e.GetRepo().GetOwner().GetName(),
-						e.GetRepo().GetName(),
-						strings.Replace(*e.Ref, "refs/heads/", "", -1),
-						commit.GetSHA(),
+						e.Owner, e.Repo,
+						strings.Replace(e.Ref, "refs/heads/", "", -1),
+						commit.SHA,
 						eModified, git, false)
 				}
 			}
@@ -93,10 +92,9 @@ func (wH WebhookHandler) handleGithubPushEvents(e *github.PushEvent, git git.Git
 			for _, eRemoved := range commit.Removed {
 				if strings.HasPrefix(eRemoved, ReleaseFilesDir) {
 					wH.syncHelmReleaseWithGithub(
-						e.GetRepo().GetOwner().GetName(),
-						e.GetRepo().GetName(),
-						strings.Replace(*e.Ref, "refs/heads/", "", -1),
-						e.GetBefore(),
+						e.Owner, e.Repo,
+						strings.Replace(e.Ref, "refs/heads/", "", -1),
+						e.Before,
 						eRemoved, git, true)
 				}
 			}

@@ -1,31 +1,49 @@
 package git
 
 import (
-	"coveros.com/pkg/factories/git/github"
-	"coveros.com/pkg/factories/git/gitlab"
 	"net/http"
+)
+
+const (
+	GithubEventHeaderKey         = "X-Github-Event"
+	GitlabEventHeaderKey         = "X-Gitlab-Event"
+	GitlabWebhookSecretHeaderKey = "X-Gitlab-Token"
 )
 
 type Git interface {
 	GetFileContents(owner, repo, branch, file string) (string, error)
 	ParseWebhook(req *http.Request, webhookSecret string) (interface{}, error)
+	PushEventToPushEventMeta(pushEvent interface{}) *PushEventMeta
 }
 
-// TODO: add support for other providers and add implementation to each inorder to satisfy Git
 func GitFactory(req *http.Request, token string) Git {
-	var githubHeaderEvent = "X-GitHub-Event"
-	var gitlabHeaderEvent = "X-Gitlab-Event"
-
-	isGithubReq := req.Header.Get(githubHeaderEvent)
+	isGithubReq := req.Header.Get(GithubEventHeaderKey)
 	if isGithubReq != "" {
-		return github.NewGithub(token)
+		return NewGithub(token)
 	}
 
-	isGitlab := req.Header.Get(gitlabHeaderEvent)
+	isGitlab := req.Header.Get(GitlabEventHeaderKey)
 	if isGitlab != "" {
-		return gitlab.NewGitlab(token)
+		return NewGitlab(token)
 	}
-
 	return nil
+}
 
+// custom push event struct to deal with factory pattern for diff git providers
+type PushEventMeta struct {
+	Head    string
+	Ref     string
+	Size    int
+	Commits []Commit
+	SHA     string
+	Before  string
+	After   string
+	Repo    string
+	Owner   string
+}
+type Commit struct {
+	Added    []string
+	Removed  []string
+	Modified []string
+	SHA      string
 }

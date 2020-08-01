@@ -5,7 +5,6 @@ import (
 	"coveros.com/pkg/factories/git"
 	"coveros.com/pkg/utils"
 	"fmt"
-	_ "github.com/google/go-github/github"
 	"reflect"
 )
 

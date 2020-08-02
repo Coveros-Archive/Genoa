@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 
 	lab "github.com/xanzy/go-gitlab"
 )
 
 type gitlab struct {
-	token  string
 	client *lab.Client
 }
 
@@ -21,7 +21,7 @@ func NewGitlab(token string) *gitlab {
 	if err != nil {
 		return nil
 	}
-	return &gitlab{token: token, client: client}
+	return &gitlab{client: client}
 }
 
 func (g *gitlab) GetFileContents(owner, repo, branch, file string) (string, error) {
@@ -36,8 +36,8 @@ func (g *gitlab) GetFileContents(owner, repo, branch, file string) (string, erro
 	return string(decodedContentInBytes), errDecoding
 }
 
-func (g *gitlab) ParseWebhook(req *http.Request, webhookSecret string) (interface{}, error) {
-	if req.Header.Get(GitlabWebhookSecretHeaderKey) != webhookSecret {
+func (g *gitlab) ParseWebhook(req *http.Request) (interface{}, error) {
+	if req.Header.Get(GitlabWebhookSecretHeaderKey) != os.Getenv(EnvVarGitlabWebhookSecret) {
 		return nil, errors.New("WebhookSecretDoesNotMatch")
 	}
 	eventType := lab.HookEventType(req)
@@ -72,4 +72,8 @@ func (g *gitlab) PushEventToPushEventMeta(pushEvent interface{}) *PushEventMeta 
 	}
 
 	return pEMeta
+}
+
+func (g *gitlab) GetDeployDir() string {
+	return os.Getenv(EnvVarGitlabReleaseFilesDir)
 }

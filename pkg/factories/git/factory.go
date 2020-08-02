@@ -2,29 +2,37 @@ package git
 
 import (
 	"net/http"
+	"os"
 )
 
 const (
-	GithubEventHeaderKey         = "X-Github-Event"
-	GitlabEventHeaderKey         = "X-Gitlab-Event"
-	GitlabWebhookSecretHeaderKey = "X-Gitlab-Token"
+	GithubEventHeaderKey            = "X-Github-Event"
+	GitlabEventHeaderKey            = "X-Gitlab-Event"
+	GitlabWebhookSecretHeaderKey    = "X-Gitlab-Token"
+	EnvVarGithubReleaseFilesDir     = "GITHUB_DEPLOY_DIRECTORY"
+	EnvVarGitlabReleaseFilesDir     = "GITLAB_DEPLOY_DIRECTORY"
+	EnvVarGithubWebhookSecret       = "GITHUB_WEBHOOK_SECRET"
+	EnvVarGitlabWebhookSecret       = "GITLAB_WEBHOOK_SECRET"
+	EnvVarGithubPersonalAccessToken = "GITHUB_PERSONAL_ACCESS_TOKEN"
+	EnvVarGitlabPersonalAccessToken = "GITLAB_PERSONAL_ACCESS_TOKEN"
 )
 
 type Git interface {
 	GetFileContents(owner, repo, branch, file string) (string, error)
-	ParseWebhook(req *http.Request, webhookSecret string) (interface{}, error)
+	ParseWebhook(req *http.Request) (interface{}, error)
 	PushEventToPushEventMeta(pushEvent interface{}) *PushEventMeta
+	GetDeployDir() string
 }
 
-func GitFactory(req *http.Request, token string) Git {
+func GitFactory(req *http.Request) Git {
 	isGithubReq := req.Header.Get(GithubEventHeaderKey)
 	if isGithubReq != "" {
-		return NewGithub(token)
+		return NewGithub(os.Getenv(EnvVarGithubPersonalAccessToken))
 	}
 
 	isGitlab := req.Header.Get(GitlabEventHeaderKey)
 	if isGitlab != "" {
-		return NewGitlab(token)
+		return NewGitlab(os.Getenv(EnvVarGitlabPersonalAccessToken))
 	}
 	return nil
 }

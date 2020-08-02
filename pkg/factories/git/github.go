@@ -6,10 +6,10 @@ import (
 	googleGithub "github.com/google/go-github/github"
 	"golang.org/x/oauth2"
 	"net/http"
+	"os"
 )
 
 type github struct {
-	token  string
 	client *googleGithub.Client
 }
 
@@ -18,7 +18,7 @@ func NewGithub(token string) *github {
 		&oauth2.Token{AccessToken: token},
 	)
 	tc := oauth2.NewClient(context.TODO(), ts)
-	return &github{token: token, client: googleGithub.NewClient(tc)}
+	return &github{client: googleGithub.NewClient(tc)}
 }
 
 func (g *github) GetFileContents(owner, repo, branch, file string) (string, error) {
@@ -32,8 +32,8 @@ func (g *github) GetFileContents(owner, repo, branch, file string) (string, erro
 	return string(decodedContentInBytes), errDecoding
 }
 
-func (g *github) ParseWebhook(req *http.Request, webhookSecret string) (interface{}, error) {
-	payload, err := googleGithub.ValidatePayload(req, []byte(webhookSecret))
+func (g *github) ParseWebhook(req *http.Request) (interface{}, error) {
+	payload, err := googleGithub.ValidatePayload(req, []byte(os.Getenv(EnvVarGithubWebhookSecret)))
 	if err != nil {
 		return nil, err
 	}
@@ -63,4 +63,8 @@ func (g *github) PushEventToPushEventMeta(pushEvent interface{}) *PushEventMeta 
 	}
 
 	return pEMeta
+}
+
+func (g *github) GetDeployDir() string {
+	return os.Getenv(EnvVarGithubReleaseFilesDir)
 }

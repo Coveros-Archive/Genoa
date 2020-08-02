@@ -17,7 +17,7 @@ func (wH WebhookHandler) syncHelmReleaseWithGithub(owner, repo, branch, SHA, rel
 	log.Info(fmt.Sprintf("Attempting to sync %v from %v/%v into cluster", releaseFile, owner, repo))
 	gitFileContents, errReadingFromGit := gitFactory.GetFileContents(owner, repo, readFileFrom, releaseFile)
 	if errReadingFromGit != nil {
-		log.Error(errReadingFromGit, "Failed to get fileContents from github")
+		log.Error(errReadingFromGit, "Failed to get fileContents from git")
 		return
 	}
 

@@ -6,18 +6,18 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.5
   creationTimestamp: null
-  name: helmreleases.coveros.apps.com
+  name: Releases.coveros.apps.com
 spec:
   group: coveros.apps.com
   names:
-    kind: HelmRelease
-    listKind: HelmReleaseList
-    plural: helmreleases
-    singular: helmrelease
+    kind: Release
+    listKind: ReleaseList
+    plural: Releases
+    singular: Release
   scope: Namespaced
   validation:
     openAPIV3Schema:
-      description: HelmRelease is the Schema for the helmreleases API
+      description: Release is the Schema for the Releases API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -32,7 +32,7 @@ spec:
         metadata:
           type: object
         spec:
-          description: HelmReleaseSpec defines the desired state of HelmRelease
+          description: ReleaseSpec defines the desired state of Release
           properties:
             atomic:
               type: boolean
@@ -63,7 +63,7 @@ spec:
           - version
           type: object
         status:
-          description: HelmReleaseStatus defines the observed state of HelmRelease
+          description: ReleaseStatus defines the observed state of Release
           type: object
       type: object
   version: v1alpha1

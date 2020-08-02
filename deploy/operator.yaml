@@ -76,7 +76,7 @@ spec:
 #              memory: 500Mi
           env:
             - name: DEPLOY_DIRECTORY
-              value: "sample-helmReleases"
+              value: "sample-Releases"
             - name: WEBHOOK_SECRET
               value: "YOUR-WEBHOOK-SECRET-REQUIRED"
       terminationGracePeriodSeconds: 10

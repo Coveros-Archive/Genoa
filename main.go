@@ -70,6 +70,7 @@ func main() {
 		SyncPeriod:         &syncPeriod,
 		Namespace:          "",
 	})
+
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
@@ -94,13 +95,13 @@ func main() {
 
 	}()
 
-	if err = (&controllers.HelmReleaseReconciler{
+	if err = (&controllers.ReleaseReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("HelmRelease"),
+		Log:    ctrl.Log.WithName("controllers").WithName("Release"),
 		Scheme: mgr.GetScheme(),
 		Cfg:    mgr.GetConfig(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "HelmRelease")
+		setupLog.Error(err, "unable to create controller", "controller", "Release")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder

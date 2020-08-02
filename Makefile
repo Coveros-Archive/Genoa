@@ -41,7 +41,7 @@ deploy: manifests
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-	rsync config/crd/bases/coveros.apps.com_helmreleases.yaml charts/genoa/crds
+	rsync config/crd/bases/coveros.apps.com_Releases.yaml charts/genoa/crds
 
 # Run go fmt against code
 fmt:
@@ -50,6 +50,9 @@ fmt:
 # Run go vet against code
 vet:
 	go vet ./...
+
+mody-tidy:
+	go mod tidy
 
 # Generate code
 generate: controller-gen
@@ -63,7 +66,7 @@ docker-build:
 docker-push:
 	docker push ${IMG}
 
-build: vet generate manifests fmt docker-build docker-push
+build: mody-tidy vet generate manifests fmt docker-build docker-push
 
 # find or download controller-gen
 # download controller-gen if necessary

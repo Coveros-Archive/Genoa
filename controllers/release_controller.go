@@ -39,22 +39,29 @@ import (
 	coverosv1alpha1 "coveros.com/api/v1alpha1"
 )
 
-// HelmReleaseReconciler reconciles a HelmRelease object
-type HelmReleaseReconciler struct {
+// ReleaseReconciler reconciles a Release object
+type ReleaseReconciler struct {
 	client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 	Cfg    *rest.Config
 }
 
-// +kubebuilder:rbac:groups=coveros.apps.com,resources=helmreleases,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=coveros.apps.com,resources=helmreleases/status,verbs=get;update;patch
-func (r *HelmReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
-	_ = r.Log.WithValues("helmrelease", req.NamespacedName)
+func (r *ReleaseReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewControllerManagedBy(mgr).
+		WithOptions(controller.Options{MaxConcurrentReconciles: 7}).
+		For(&coverosv1alpha1.Release{}).
+		Complete(r)
+}
 
-	// Fetch the HelmRelease CR
-	cr := &coverosv1alpha1.HelmRelease{}
+// +kubebuilder:rbac:groups=coveros.apps.com,resources=Releases,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=coveros.apps.com,resources=Releases/status,verbs=get;update;patch
+func (r *ReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+	_ = context.Background()
+	_ = r.Log.WithValues("Release", req.NamespacedName)
+
+	// Fetch the Release CR
+	cr := &coverosv1alpha1.Release{}
 	err := r.Client.Get(context.TODO(), req.NamespacedName, cr)
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
@@ -171,11 +178,4 @@ func (r *HelmReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error)
 	}
 
 	return ctrl.Result{}, nil
-}
-
-func (r *HelmReleaseReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		WithOptions(controller.Options{MaxConcurrentReconciles: 7}).
-		For(&coverosv1alpha1.HelmRelease{}).
-		Complete(r)
 }

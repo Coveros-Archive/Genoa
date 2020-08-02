@@ -8,7 +8,7 @@ import (
 	"reflect"
 )
 
-func (wH WebhookHandler) syncHelmReleaseWithGithub(owner, repo, branch, SHA, releaseFile string, gitFactory git.Git, isRemovedFromGithub bool) {
+func (wH WebhookHandler) syncReleaseWithGithub(owner, repo, branch, SHA, releaseFile string, gitFactory git.Git, isRemovedFromGithub bool) {
 	var readFileFrom = branch
 	if isRemovedFromGithub {
 		readFileFrom = SHA
@@ -21,14 +21,14 @@ func (wH WebhookHandler) syncHelmReleaseWithGithub(owner, repo, branch, SHA, rel
 		return
 	}
 
-	hrFromGit, unMarshalErr := utils.UnMarshalStringDataToHelmRelease(gitFileContents)
+	hrFromGit, unMarshalErr := utils.UnMarshalStringDataToRelease(gitFileContents)
 	if unMarshalErr != nil {
-		log.Info("Failed to unmarshal")
+		log.Error(unMarshalErr, "Failed to unmarshal")
 		return
 	}
 
 	if hrFromGit == nil {
-		log.Info(fmt.Sprintf("%v is not a valid HelmRelease, therefore skipping", releaseFile))
+		log.Info(fmt.Sprintf("%v is not a valid Release, therefore skipping", releaseFile))
 		return
 	}
 
@@ -51,10 +51,10 @@ func (wH WebhookHandler) syncHelmReleaseWithGithub(owner, repo, branch, SHA, rel
 
 	if isRemovedFromGithub {
 		if err := wH.Client.Delete(context.TODO(), hrFromGit); err != nil {
-			log.Error(err, "Failed to delete HelmRelease which was removed from github")
+			log.Error(err, "Failed to delete Release which was removed from github")
 			return
 		}
-		log.Info(fmt.Sprintf("Delete %v HelmRelease from cluster initiated...", hrFromGit.GetName()))
+		log.Info(fmt.Sprintf("Delete %v Release from cluster initiated...", hrFromGit.GetName()))
 		return
 	}
 
@@ -64,12 +64,12 @@ func (wH WebhookHandler) syncHelmReleaseWithGithub(owner, repo, branch, SHA, rel
 		return
 	}
 
-	log.Info(fmt.Sprintf("Creating %v/%v HelmRelease", hrFromGit.GetNamespace(), hrFromGit.GetName()))
-	hrFromCluster, errCreatingHR := utils.CreateHelmRelease(hrFromGit, wH.Client)
+	log.Info(fmt.Sprintf("Creating %v/%v Release", hrFromGit.GetNamespace(), hrFromGit.GetName()))
+	hrFromCluster, errCreatingHR := utils.CreateRelease(hrFromGit, wH.Client)
 	if errCreatingHR != nil {
-		log.Info(fmt.Sprintf("%v/%v failed to create helmRelease : %v", hrFromGit.GetNamespace(), hrFromGit.GetName(), errCreatingHR))
+		log.Info(fmt.Sprintf("%v/%v failed to create Release : %v", hrFromGit.GetNamespace(), hrFromGit.GetName(), errCreatingHR))
 	}
-	log.Info(fmt.Sprintf("Successfully created %v/%v HelmRelease", hrFromGit.GetNamespace(), hrFromGit.GetName()))
+	log.Info(fmt.Sprintf("Successfully created %v/%v Release", hrFromGit.GetNamespace(), hrFromGit.GetName()))
 
 	specInSync := reflect.DeepEqual(hrFromCluster.Spec, hrFromGit.Spec)
 	labelsInSync := reflect.DeepEqual(hrFromCluster.GetLabels(), hrFromGit.GetLabels())
@@ -79,11 +79,11 @@ func (wH WebhookHandler) syncHelmReleaseWithGithub(owner, repo, branch, SHA, rel
 		hrFromCluster.SetLabels(hrFromGit.GetLabels())
 		hrFromCluster.Spec = hrFromGit.Spec
 		if errUpdating := wH.Client.Update(context.TODO(), hrFromCluster); errUpdating != nil {
-			log.Error(errUpdating, fmt.Sprintf("Failed to apply HelmRelease from %v/%v - %v", owner, repo, hrFromGit.GetName()))
+			log.Error(errUpdating, fmt.Sprintf("Failed to apply Release from %v/%v - %v", owner, repo, hrFromGit.GetName()))
 			return
 		}
 
-		log.Info(fmt.Sprintf("Updated HelmRelease from %v/%v - %v/%v", owner, repo, hrFromGit.GetNamespace(), hrFromGit.GetName()))
+		log.Info(fmt.Sprintf("Updated Release from %v/%v - %v/%v", owner, repo, hrFromGit.GetNamespace(), hrFromGit.GetName()))
 	}
 
 }

@@ -18,17 +18,17 @@ import (
 	"strings"
 )
 
-func UnMarshalStringDataToHelmRelease(strData string) (*v1alpha1.HelmRelease, error) {
-	helmRelease := &v1alpha1.HelmRelease{}
-	if err := yaml.Unmarshal([]byte(strData), helmRelease); err != nil {
+func UnMarshalStringDataToRelease(strData string) (*v1alpha1.Release, error) {
+	release := &v1alpha1.Release{}
+	if err := yaml.Unmarshal([]byte(strData), release); err != nil {
 		return nil, err
 	}
 
-	if helmRelease.Kind == "" {
+	if release.Kind == "" || release.APIVersion == "" {
 		return nil, nil
 	}
 
-	return helmRelease, nil
+	return release, nil
 }
 
 func RemoveDupesFromSlice(fromSlice []string) []string {
@@ -66,12 +66,12 @@ func UpdateCrStatus(runtimeObj runtime.Object, client2 client.Client) error {
 	return client2.Status().Update(context.TODO(), runtimeObj)
 }
 
-func AddFinalizer(whichFinalizer string, client client.Client, cr *v1alpha1.HelmRelease) error {
+func AddFinalizer(whichFinalizer string, client client.Client, cr *v1alpha1.Release) error {
 	controllerutil.AddFinalizer(cr, whichFinalizer)
 	return UpdateCr(cr, client)
 }
 
-func RemoveFinalizer(whichFinalizer string, client client.Client, cr *v1alpha1.HelmRelease) error {
+func RemoveFinalizer(whichFinalizer string, client client.Client, cr *v1alpha1.Release) error {
 	controllerutil.RemoveFinalizer(cr, whichFinalizer)
 	return UpdateCr(cr, client)
 }
@@ -91,12 +91,12 @@ func CreateNamespace(name string, client client.Client) error {
 	return nil
 }
 
-func CreateHelmRelease(hr *v1alpha1.HelmRelease, client client.Client) (*v1alpha1.HelmRelease, error) {
+func CreateRelease(hr *v1alpha1.Release, client client.Client) (*v1alpha1.Release, error) {
 	if hr.GetNamespace() == "" {
 		hr.SetNamespace("default")
 	}
 
-	hrFound := &v1alpha1.HelmRelease{}
+	hrFound := &v1alpha1.Release{}
 	err := client.Get(context.TODO(), types.NamespacedName{
 		Namespace: hr.GetNamespace(),
 		Name:      hr.GetName(),

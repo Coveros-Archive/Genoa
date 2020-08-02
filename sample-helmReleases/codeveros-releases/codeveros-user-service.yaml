@@ -1,5 +1,5 @@
 apiVersion: coveros.apps.com/v1alpha1
-kind: HelmRelease
+kind: Release
 metadata:
   name: codeveros-user-service
   namespace: codeveros

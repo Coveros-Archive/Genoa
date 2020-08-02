@@ -24,8 +24,8 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// HelmReleaseSpec defines the desired state of HelmRelease
-type HelmReleaseSpec struct {
+// ReleaseSpec defines the desired state of Release
+type ReleaseSpec struct {
 	// +optional
 	Atomic bool `json:"atomic"`
 
@@ -97,37 +97,37 @@ func (v *Values) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// HelmReleaseStatus defines the observed state of HelmRelease
-type HelmReleaseStatus struct {
+// ReleaseStatus defines the observed state of Release
+type ReleaseStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
 // +kubebuilder:object:root=true
 
-// HelmRelease is the Schema for the helmreleases API
+// Release is the Schema for the Releases API
 // +kubebuilder:printcolumn:name="release-name",type=string,JSONPath=.metadata.name
 // +kubebuilder:printcolumn:name="release-namespace",type=string,JSONPath=.metadata.namespace
 // +kubebuilder:printcolumn:name="chart",type=string,JSONPath=.spec.chart
 // +kubebuilder:printcolumn:name="chart-version",type=string,JSONPath=.spec.version
 // +kubebuilder:printcolumn:name="age",type=date,JSONPath=.metadata.creationTimestamp
-type HelmRelease struct {
+type Release struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   HelmReleaseSpec   `json:"spec,omitempty"`
-	Status HelmReleaseStatus `json:"status,omitempty"`
+	Spec   ReleaseSpec   `json:"spec,omitempty"`
+	Status ReleaseStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// HelmReleaseList contains a list of HelmRelease
-type HelmReleaseList struct {
+// ReleaseList contains a list of Release
+type ReleaseList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []HelmRelease `json:"items"`
+	Items           []Release `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&HelmRelease{}, &HelmReleaseList{})
+	SchemeBuilder.Register(&Release{}, &ReleaseList{})
 }

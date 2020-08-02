@@ -41,7 +41,7 @@ func (wH WebhookHandler) handleGitPushEvents(e *git.PushEventMeta, git git.Git) 
 		if len(commit.Added) > 0 {
 			for _, eAdded := range commit.Added {
 				if strings.HasPrefix(eAdded, git.GetDeployDir()) {
-					wH.syncHelmReleaseWithGithub(
+					wH.syncReleaseWithGithub(
 						e.Owner, e.Repo,
 						strings.Replace(e.Ref, "refs/heads/", "", -1),
 						commit.SHA,
@@ -53,7 +53,7 @@ func (wH WebhookHandler) handleGitPushEvents(e *git.PushEventMeta, git git.Git) 
 		if len(commit.Modified) > 0 {
 			for _, eModified := range commit.Modified {
 				if strings.HasPrefix(eModified, git.GetDeployDir()) {
-					wH.syncHelmReleaseWithGithub(
+					wH.syncReleaseWithGithub(
 						e.Owner, e.Repo,
 						strings.Replace(e.Ref, "refs/heads/", "", -1),
 						commit.SHA,
@@ -65,7 +65,7 @@ func (wH WebhookHandler) handleGitPushEvents(e *git.PushEventMeta, git git.Git) 
 		if len(commit.Removed) > 0 {
 			for _, eRemoved := range commit.Removed {
 				if strings.HasPrefix(eRemoved, git.GetDeployDir()) {
-					wH.syncHelmReleaseWithGithub(
+					wH.syncReleaseWithGithub(
 						e.Owner, e.Repo,
 						strings.Replace(e.Ref, "refs/heads/", "", -1),
 						e.Before,

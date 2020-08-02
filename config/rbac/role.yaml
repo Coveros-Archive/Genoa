@@ -9,7 +9,7 @@ rules:
 - apiGroups:
   - coveros.apps.com
   resources:
-  - helmreleases
+  - Releases
   verbs:
   - create
   - delete
@@ -21,7 +21,7 @@ rules:
 - apiGroups:
   - coveros.apps.com
   resources:
-  - helmreleases/status
+  - Releases/status
   verbs:
   - get
   - patch

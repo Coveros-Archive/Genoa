@@ -1,13 +1,13 @@
-# permissions for end users to view helmreleases.
+# permissions for end users to view Releases.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: helmrelease-viewer-role
+  name: Release-viewer-role
 rules:
 - apiGroups:
   - coveros.apps.com
   resources:
-  - helmreleases
+  - Releases
   verbs:
   - get
   - list
@@ -15,6 +15,6 @@ rules:
 - apiGroups:
   - coveros.apps.com
   resources:
-  - helmreleases/status
+  - Releases/status
   verbs:
   - get

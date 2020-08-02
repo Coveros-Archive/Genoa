@@ -1,13 +1,13 @@
-# permissions for end users to edit helmreleases.
+# permissions for end users to edit Releases.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: helmrelease-editor-role
+  name: Release-editor-role
 rules:
 - apiGroups:
   - coveros.apps.com
   resources:
-  - helmreleases
+  - Releases
   verbs:
   - create
   - delete
@@ -19,6 +19,6 @@ rules:
 - apiGroups:
   - coveros.apps.com
   resources:
-  - helmreleases/status
+  - Releases/status
   verbs:
   - get

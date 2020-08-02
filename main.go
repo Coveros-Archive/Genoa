@@ -97,11 +97,11 @@ func main() {
 
 	if err = (&controllers.ReleaseReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Release"),
+		Log:    ctrl.Log.WithName("controllers").WithName("release"),
 		Scheme: mgr.GetScheme(),
 		Cfg:    mgr.GetConfig(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Release")
+		setupLog.Error(err, "unable to create controller", "controller", "release")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder

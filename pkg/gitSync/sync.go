@@ -28,7 +28,7 @@ func (wH WebhookHandler) syncReleaseWithGithub(owner, repo, branch, SHA, release
 	}
 
 	if hrFromGit == nil {
-		log.Info(fmt.Sprintf("%v is not a valid Release, therefore skipping", releaseFile))
+		log.Info(fmt.Sprintf("%v is not a valid release, therefore skipping", releaseFile))
 		return
 	}
 
@@ -54,7 +54,7 @@ func (wH WebhookHandler) syncReleaseWithGithub(owner, repo, branch, SHA, release
 			log.Error(err, "Failed to delete Release which was removed from github")
 			return
 		}
-		log.Info(fmt.Sprintf("Delete %v Release from cluster initiated...", hrFromGit.GetName()))
+		log.Info(fmt.Sprintf("Delete %v release from cluster initiated...", hrFromGit.GetName()))
 		return
 	}
 
@@ -64,10 +64,10 @@ func (wH WebhookHandler) syncReleaseWithGithub(owner, repo, branch, SHA, release
 		return
 	}
 
-	log.Info(fmt.Sprintf("Creating %v/%v Release", hrFromGit.GetNamespace(), hrFromGit.GetName()))
+	log.Info(fmt.Sprintf("Creating %v/%v release", hrFromGit.GetNamespace(), hrFromGit.GetName()))
 	hrFromCluster, errCreatingHR := utils.CreateRelease(hrFromGit, wH.Client)
 	if errCreatingHR != nil {
-		log.Info(fmt.Sprintf("%v/%v failed to create Release : %v", hrFromGit.GetNamespace(), hrFromGit.GetName(), errCreatingHR))
+		log.Info(fmt.Sprintf("%v/%v failed to create release : %v", hrFromGit.GetNamespace(), hrFromGit.GetName(), errCreatingHR))
 	}
 	log.Info(fmt.Sprintf("Successfully created %v/%v Release", hrFromGit.GetNamespace(), hrFromGit.GetName()))
 
@@ -79,11 +79,11 @@ func (wH WebhookHandler) syncReleaseWithGithub(owner, repo, branch, SHA, release
 		hrFromCluster.SetLabels(hrFromGit.GetLabels())
 		hrFromCluster.Spec = hrFromGit.Spec
 		if errUpdating := wH.Client.Update(context.TODO(), hrFromCluster); errUpdating != nil {
-			log.Error(errUpdating, fmt.Sprintf("Failed to apply Release from %v/%v - %v", owner, repo, hrFromGit.GetName()))
+			log.Error(errUpdating, fmt.Sprintf("Failed to apply release from %v/%v - %v", owner, repo, hrFromGit.GetName()))
 			return
 		}
 
-		log.Info(fmt.Sprintf("Updated Release from %v/%v - %v/%v", owner, repo, hrFromGit.GetNamespace(), hrFromGit.GetName()))
+		log.Info(fmt.Sprintf("Updated release from %v/%v - %v/%v", owner, repo, hrFromGit.GetNamespace(), hrFromGit.GetName()))
 	}
 
 }

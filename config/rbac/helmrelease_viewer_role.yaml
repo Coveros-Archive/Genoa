@@ -1,8 +1,8 @@
-# permissions for end users to view Releases.
+# permissions for end users to view releases.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: Release-viewer-role
+  name: release-viewer-role
 rules:
 - apiGroups:
   - coveros.apps.com

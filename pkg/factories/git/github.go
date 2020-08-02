@@ -46,7 +46,6 @@ func (g *github) PushEventToPushEventMeta(pushEvent interface{}) *PushEventMeta 
 	if !ok {
 		return nil
 	}
-
 	pEMeta := &PushEventMeta{
 		Ref:     *pE.Ref,
 		Before:  *pE.Before,

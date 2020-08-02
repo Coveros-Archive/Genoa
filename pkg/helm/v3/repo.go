@@ -7,6 +7,7 @@ import (
 	"helm.sh/helm/v3/pkg/getter"
 	"helm.sh/helm/v3/pkg/repo"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -27,14 +28,15 @@ func (h *HelmV3) GetRepoUrlFromRepoConfig(repoAliasName string) (string, string,
 
 func (h *HelmV3) FindDownloadUrlFromCacheFile(repoCacheFile *repo.IndexFile, chartName, chartVersion string) (string, error) {
 	if chartEntries, chartFound := repoCacheFile.Entries[chartName]; chartFound {
-		for _, entry := range chartEntries {
-			if entry.Version == chartVersion {
-				if len(entry.URLs) == 0 {
-					return "", pkg.ErrorInvalidChartDownloadUrl{Message: fmt.Sprintf("%v-%v has no urls in cache file.. do not know what to do anymore", chartName, chartVersion)}
-				}
-				return entry.URLs[0], nil
-			}
+		sort.Slice(chartEntries, func(i, j int) bool {
+			return chartEntries[i].Version < chartEntries[j].Version
+		})
+		idx, err := getIdxOfChartVersionFromChartEntries(chartEntries, chartVersion, 0, len(chartEntries)-1)
+		if err != nil {
+			return "", err
 		}
+
+		return chartEntries[idx].URLs[0], nil
 	}
 	return "", pkg.ErrorHelmRepoNeedsRefresh{Message: fmt.Sprintf("%v-%v chart not found in repo index, a refresh might help", chartName, chartVersion)}
 }
@@ -81,4 +83,18 @@ func (h *HelmV3) RefreshRepoIndex(repoAlias string) error {
 
 func (h *HelmV3) getRepoFile() (*repo.File, error) {
 	return repo.LoadFile(h.settings.RepositoryConfig)
+}
+
+func getIdxOfChartVersionFromChartEntries(slice repo.ChartVersions, lookupVersion string, left, right int) (int, error) {
+	if left > right {
+		return -1, pkg.ErrorHelmRepoNeedsRefresh{Message: fmt.Sprintf("chart not found in repo index, a refresh might help")}
+	}
+	mid := left + (right-left)/2
+	if slice[mid].Version == lookupVersion {
+		return mid, nil
+	} else if lookupVersion < slice[mid].Version {
+		return getIdxOfChartVersionFromChartEntries(slice, lookupVersion, left, mid-1)
+	}
+
+	return getIdxOfChartVersionFromChartEntries(slice, lookupVersion, mid+1, right)
 }

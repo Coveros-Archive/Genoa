@@ -8,7 +8,7 @@ deployment:
   image:
     repository: agill17/genoa
     pullPolicy: Always
-    tag: 0.1.0
+    tag: 0.1.1
   imagePullSecrets: []
   labels: {}
   annotations: {}

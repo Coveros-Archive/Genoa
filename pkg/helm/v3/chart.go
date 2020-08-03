@@ -7,6 +7,7 @@ import (
 	"helm.sh/helm/v3/pkg/repo"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func (h HelmV3) DownloadChart(repoUrl, repoAlias, chart, version, username, password, destDir string) (string, error) {
@@ -20,11 +21,9 @@ func (h HelmV3) DownloadChart(repoUrl, repoAlias, chart, version, username, pass
 	}
 
 	// first attempt to assume a download url, so we dont have to look up url in index file
-	chartTarballName := fmt.Sprintf("%s-%s.tgz", chart, version)
+	chartTarballName := fmt.Sprintf("%s-%s.tgz", strings.ReplaceAll(chart, "/", "-"), version)
 	assumedChartPath := fmt.Sprintf("%s/%s", destDir, chartTarballName)
 	assumedDownloadUrl := fmt.Sprintf("%s/%s", repoUrl, chartTarballName)
-	logger.Info(fmt.Sprintf("attempting to download %s chart from %s", chart, repoUrl))
-
 	if errDownloadingChart := utils.DownloadFile(assumedChartPath, assumedDownloadUrl, username, password); errDownloadingChart != nil {
 
 		// assumed url did not work, lookup url specified in index file. Could be slow if a chart entry has too many versions
@@ -44,7 +43,12 @@ func (h HelmV3) DownloadChart(repoUrl, repoAlias, chart, version, username, pass
 			logger.Error(errGettingDownloadUrl, "Could not find a download url")
 			return assumedChartPath, errGettingDownloadUrl
 		}
-		logger.Info(fmt.Sprintf("attempting to download chart from index file %s", downloadUrl))
+
+		// some download urls are not really urls, so fix that
+		if !strings.HasPrefix(downloadUrl, "https://") {
+			downloadUrl = fmt.Sprintf("%s/%s", utils.TrimSuffix(repoUrl, "/"), downloadUrl)
+		}
+		logger.Info(fmt.Sprintf("attempting to download chart from index url %s", downloadUrl))
 
 		return assumedChartPath, utils.DownloadFile(assumedChartPath, downloadUrl, username, password)
 	}

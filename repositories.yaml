@@ -42,3 +42,10 @@ repositories:
   password: ""
   url: https://aws.github.io/eks-charts
   username: ""
+- caFile: ""
+  certFile: ""
+  keyFile: ""
+  name: center
+  password: ""
+  url: https://repo.chartcenter.io
+  username: ""

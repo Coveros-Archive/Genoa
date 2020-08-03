@@ -73,7 +73,11 @@ func (r *ReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 	hrName := cr.GetName()
 	hrNamespace := cr.GetNamespace()
-	repoWithChartName := strings.Split(cr.Spec.Chart, "/")
+	repoWithChartName := strings.SplitN(cr.Spec.Chart, "/", 2)
+	var justChartName = repoWithChartName[1]
+	if strings.Contains(justChartName, "/") {
+		justChartName = strings.Split(justChartName, "/")[1]
+	}
 	repoAlias, chartName := repoWithChartName[0], repoWithChartName[1]
 	helmV3, errCreatingActionConfig := v3.NewActionConfig(cr.GetNamespace(), r.Cfg)
 	if errCreatingActionConfig != nil {
@@ -141,7 +145,7 @@ func (r *ReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	valuesInSync := reflect.DeepEqual(cr.Spec.ValuesOverride.V, releaseValuesOverride)
 	chartVersionInSync := cr.Spec.Version == releaseInfo.Chart.Metadata.Version
-	chartNameInSync := chartName == releaseInfo.Chart.Metadata.Name
+	chartNameInSync := justChartName == releaseInfo.Chart.Metadata.Name
 
 	if !chartNameInSync || !chartVersionInSync || !valuesInSync {
 		r.Log.Info(fmt.Sprintf("%v release values in sync with installed values: %v", req.NamespacedName, valuesInSync))

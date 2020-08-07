@@ -1,0 +1,34 @@
+Thanks for installing Genoa!
+
+To learn more about the release, try:
+
+  $ helm status {{ .Release.Name }} -n {{ .Release.Namespace }}
+
+
+##################################################
+            Github Webhook Configuration
+##################################################
+To configure webhooks for all your github projects:
+1. Navigate to your repository settings
+2. Click on "Webhooks"
+3. Add a webhook
+4. Payload url will be: https://{{ .Values.ingress.host }}/webhook
+5. Secret will be: {{ .Values.config.github.webhookSecret }}
+7. For event types to send to webhook, select "Just the push event."
+8. Finally, click on "Add webhook"
+9. Ensure the ingress controller genoa is using has github webhook IP's whitelisted ( For github.com check: https://api.github.com/meta )
+10. Everytime you make a commit in {{ .Values.config.github.deployDir }} of your github projects, Genoa pod will reconcile the state
+
+
+##################################################
+            Gitlab Webhook Configuration
+##################################################
+To configure webhooks for all your gitlab projects:
+1. Navigate to your project settings in gitlab
+2. Click on "Webhooks"
+4. URL will be: https://{{ .Values.ingress.host }}/webhook
+5. Secret Token will be: {{ .Values.config.gitlab.webhookSecret }}
+7. For Trigger, select "Push events". You may add branch filter as you see fit.
+8. Finally, click on "Add webhook"
+9. Ensure the ingress controller genoa is using has github webhook IP's whitelisted ( For gitlab.com check: https://docs.gitlab.com/ee/user/gitlab_com/#ip-range )
+10. Everytime you make a commit in {{ .Values.config.gitlab.deployDir }} of your gitlab projects, Genoa pod will reconcile the state

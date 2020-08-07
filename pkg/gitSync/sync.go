@@ -2,9 +2,11 @@ package gitSync
 
 import (
 	"context"
+	"coveros.com/api/v1alpha1"
 	"coveros.com/pkg/factories/git"
 	"coveros.com/pkg/utils"
 	"fmt"
+	"k8s.io/client-go/kubernetes/scheme"
 	"reflect"
 )
 
@@ -21,14 +23,10 @@ func (wH WebhookHandler) syncReleaseWithGithub(owner, repo, branch, SHA, release
 		return
 	}
 
-	hrFromGit, unMarshalErr := utils.UnMarshalStringDataToRelease(gitFileContents)
-	if unMarshalErr != nil {
-		log.Error(unMarshalErr, "Failed to unmarshal")
-		return
-	}
-
-	if hrFromGit == nil {
-		log.Info(fmt.Sprintf("%v is not a valid release, therefore skipping", releaseFile))
+	hrFromGit := &v1alpha1.Release{}
+	_, _, err := scheme.Codecs.UniversalDeserializer().Decode([]byte(gitFileContents), nil, hrFromGit)
+	if err != nil {
+		log.Error(err, "Could not decode release file from git, perhaps its not a release file..")
 		return
 	}
 

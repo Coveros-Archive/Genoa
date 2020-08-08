@@ -4,13 +4,14 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    control-plane: controller-manager
-  name: controller-manager-metrics-monitor
-  namespace: system
+    name: genoa
+    release: prometheus-operator
+  name: genoa-metrics-monitor
+  namespace: genoa
 spec:
   endpoints:
     - path: /metrics
       port: https
   selector:
     matchLabels:
-      control-plane: controller-manager
+      name: genoa

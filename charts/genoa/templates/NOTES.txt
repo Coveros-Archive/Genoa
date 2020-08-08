@@ -4,7 +4,7 @@ To learn more about the release, try:
 
   $ helm status {{ .Release.Name }} -n {{ .Release.Namespace }}
 
-
+{{- if .Values.config.github.enabled }}
 ##################################################
             Github Webhook Configuration
 ##################################################
@@ -18,8 +18,10 @@ To configure webhooks for all your github projects:
 8. Finally, click on "Add webhook"
 9. Ensure the ingress controller genoa is using has github webhook IP's whitelisted ( For github.com check: https://api.github.com/meta )
 10. Everytime you make a commit in {{ .Values.config.github.deployDir }} of your github projects, Genoa pod will reconcile the state
+{{- end }}
 
 
+{{- if .Values.config.gitlab.enabled }}
 ##################################################
             Gitlab Webhook Configuration
 ##################################################
@@ -32,3 +34,4 @@ To configure webhooks for all your gitlab projects:
 8. Finally, click on "Add webhook"
 9. Ensure the ingress controller genoa is using has github webhook IP's whitelisted ( For gitlab.com check: https://docs.gitlab.com/ee/user/gitlab_com/#ip-range )
 10. Everytime you make a commit in {{ .Values.config.gitlab.deployDir }} of your gitlab projects, Genoa pod will reconcile the state
+{{- end }}

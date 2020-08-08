@@ -131,6 +131,7 @@ func (r *ReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			// force requeue to get new release state
 			return ctrl.Result{Requeue: true}, nil
 		}
+		return ctrl.Result{}, errGettingReleaseInfo
 	}
 
 	if isReleasePending(releaseInfo) {

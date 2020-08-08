@@ -62,10 +62,14 @@ func (r *ReleaseReconciler) cleanup(cr *v1alpha1.Release, actionConfig *v3.HelmV
 }
 
 func (r *ReleaseReconciler) pullChart(namespace, crName, repoAlias, chartName, version string, actionConfig *v3.HelmV3) (string, error) {
+
+	// find repo url from repo config file
 	repoUrl, username, password, errLookingUpRepo := actionConfig.GetRepoUrlFromRepoConfig(repoAlias)
 	if errLookingUpRepo != nil {
 		return "", errLookingUpRepo
 	}
+
+	// download chart
 	chartPath, errDownloadingChart := actionConfig.DownloadChart(repoUrl, repoAlias,
 		chartName, version,
 		username, password,
@@ -73,6 +77,8 @@ func (r *ReleaseReconciler) pullChart(namespace, crName, repoAlias, chartName, v
 	if errDownloadingChart != nil {
 		return "", errDownloadingChart
 	}
+
+	// return chart path
 	return chartPath, nil
 }
 

@@ -21,7 +21,9 @@ import (
 	v3 "coveros.com/pkg/helm/v3"
 	"flag"
 	"fmt"
+	"github.com/containrrr/shoutrrr/pkg/router"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
@@ -33,6 +35,7 @@ import (
 
 	coverosv1alpha1 "coveros.com/api/v1alpha1"
 	"coveros.com/controllers"
+	"github.com/containrrr/shoutrrr"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -52,6 +55,8 @@ func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var customRepoConfigPath string
+	var notificationChannels []string
+	var notificationSender *router.ServiceRouter
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. "+
@@ -95,12 +100,35 @@ func main() {
 
 	}()
 
-	if err = (&controllers.ReleaseReconciler{
+	releaseReconciler := &controllers.ReleaseReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("release"),
 		Scheme: mgr.GetScheme(),
 		Cfg:    mgr.GetConfig(),
-	}).SetupWithManager(mgr); err != nil {
+	}
+
+	// if slackUrl is set, add that to list of notification channels
+	if slackUrl, ok := os.LookupEnv("SLACK_WEBHOOK_URL"); ok {
+		if _, errParsingUrl := url.ParseRequestURI(slackUrl); errParsingUrl != nil {
+			setupLog.Error(errParsingUrl, "Failed to parse SLACK_WEBHOOK_URL! Exiting now...")
+			os.Exit(1)
+		}
+		// we can simply keep on adding other alert urls to notificationChannels
+		// as long as it is supported by shoutrrr : https://containrrr.dev/shoutrrr/services/overview/
+		notificationChannels = append(notificationChannels, slackUrl)
+	}
+
+	// if notificationChannels has any urls, we need to setup a notification router
+	if len(notificationChannels) > 0 {
+		notificationSender, err = shoutrrr.CreateSender(notificationChannels...)
+		if err != nil {
+			setupLog.Error(err, "Failed to setup a notification sender.. exiting now..")
+			os.Exit(1)
+		}
+		releaseReconciler.NotificationSender = notificationSender
+	}
+
+	if err = releaseReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "release")
 		os.Exit(1)
 	}
@@ -114,4 +142,16 @@ func main() {
 }
 func healthCheck(wr http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(wr, "OK")
+}
+
+func getSlackUrl() string {
+	slackUrl := os.Getenv("SLACK_WEBHOOK_URL")
+
+	// validate
+	_, errParsing := url.ParseRequestURI(slackUrl)
+	if errParsing != nil {
+
+	}
+
+	return slackUrl
 }

@@ -3,6 +3,7 @@ module coveros.com
 go 1.13
 
 require (
+	github.com/containrrr/shoutrrr v0.0.0-20200810085354-a9206f031449
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-logr/logr v0.1.0
 	github.com/google/go-github v17.0.0+incompatible

@@ -8,7 +8,7 @@ deployment:
   image:
     repository: agill17/genoa
     pullPolicy: Always
-    tag: 0.1.1
+    tag: 0.3.1
   imagePullSecrets: []
   labels: {}
   annotations: {}
@@ -18,6 +18,11 @@ deployment:
   podLabels: {}
   initContainers: []
   envVars: []
+  ### If you want to send slack notifications, then setup a slack webhook url
+  ## Typical slack webhook url : https://hooks.slack.com/services/token-a/token-b/token-c
+  ### Change the above to      : slack://appORbotname@token-a/token-b/token-c
+#  - name: SLACK_WEBHOOK_URL
+#    value: slack://appORbotname@token-a/token-b/token-c
   nodeSelector: {}
   livenessProbe:
     httpGet:
@@ -92,4 +97,3 @@ ingress:
   #  - secretName: chart-example-tls
   #    hosts:
   #      - chart-example.local
-

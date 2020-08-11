@@ -23,6 +23,7 @@ import (
 	"coveros.com/pkg/utils"
 	"errors"
 	"fmt"
+	"github.com/containrrr/shoutrrr/pkg/router"
 	"github.com/go-logr/logr"
 	"helm.sh/helm/v3/pkg/storage/driver"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -42,9 +43,10 @@ import (
 // ReleaseReconciler reconciles a Release object
 type ReleaseReconciler struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
-	Cfg    *rest.Config
+	Log                logr.Logger
+	Scheme             *runtime.Scheme
+	Cfg                *rest.Config
+	NotificationSender *router.ServiceRouter
 }
 
 func (r *ReleaseReconciler) SetupWithManager(mgr ctrl.Manager) error {
@@ -52,6 +54,11 @@ func (r *ReleaseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		WithOptions(controller.Options{MaxConcurrentReconciles: 7}).
 		For(&coverosv1alpha1.Release{}).
 		Complete(r)
+}
+func (r *ReleaseReconciler) sendNotification(msg string) {
+	if r.NotificationSender != nil {
+		r.NotificationSender.Send(msg, nil)
+	}
 }
 
 // +kubebuilder:rbac:groups=coveros.apps.com,resources=Releases,verbs=get;list;watch;create;update;patch;delete
@@ -94,6 +101,7 @@ func (r *ReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		if errCleaningUp := r.cleanup(cr, helmV3); errCleaningUp != nil {
 			return ctrl.Result{}, errCleaningUp
 		}
+		r.sendNotification(fmt.Sprintf("Namespace/Name: %s\nRelease deleted :ghost:", req.NamespacedName))
 		return ctrl.Result{}, nil // do not requeue
 	}
 
@@ -126,9 +134,11 @@ func (r *ReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			r.Log.Info(fmt.Sprintf("%v: downloaded chart at %v", req.NamespacedName, chartPath))
 			_, errInstallingChart := helmV3.InstallRelease(chartPath, installOptions, cr.Spec.ValuesOverride.V)
 			if errInstallingChart != nil {
+				r.sendNotification(fmt.Sprintf("Namespace/Name: %s\nRelease failed to install :bug: :%v", req.NamespacedName, errInstallingChart))
 				return ctrl.Result{}, errInstallingChart
 			}
 			// force requeue to get new release state
+			r.sendNotification(fmt.Sprintf("Namespace/Name: %s\nRelease installed :rocket:", req.NamespacedName))
 			return ctrl.Result{Requeue: true}, nil
 		}
 		return ctrl.Result{}, errGettingReleaseInfo
@@ -177,8 +187,10 @@ func (r *ReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			Force:                    cr.Spec.ForceUpgrade,
 		}
 		if _, errUpgradingRelease := helmV3.UpgradeRelease(chartPath, upgradeOpts, cr.Spec.ValuesOverride.V); errUpgradingRelease != nil {
+			r.sendNotification(fmt.Sprintf("Namespace/Name: %s\nRelease failed to upgrade :bug: :%v", req.NamespacedName, errUpgradingRelease))
 			return ctrl.Result{}, errUpgradingRelease
 		}
+		r.sendNotification(fmt.Sprintf("Namespace/Name: %s\nRelease upgraded :rocket:", req.NamespacedName))
 		r.Log.Info(fmt.Sprintf("Successfully upgraded helm release for %v", req.NamespacedName))
 	}
 

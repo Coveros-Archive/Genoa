@@ -143,15 +143,3 @@ func main() {
 func healthCheck(wr http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(wr, "OK")
 }
-
-func getSlackUrl() string {
-	slackUrl := os.Getenv("SLACK_WEBHOOK_URL")
-
-	// validate
-	_, errParsing := url.ParseRequestURI(slackUrl)
-	if errParsing != nil {
-
-	}
-
-	return slackUrl
-}

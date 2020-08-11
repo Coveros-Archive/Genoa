@@ -44,6 +44,10 @@ var (
 	setupLog = ctrl.Log.WithName("setup")
 )
 
+const (
+	SlackUrlEnvVar = "SLACK_WEBHOOK_URL"
+)
+
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 
@@ -108,9 +112,9 @@ func main() {
 	}
 
 	// if slackUrl is set, add that to list of notification channels
-	if slackUrl, ok := os.LookupEnv("SLACK_WEBHOOK_URL"); ok {
+	if slackUrl, ok := os.LookupEnv(SlackUrlEnvVar); ok {
 		if _, errParsingUrl := url.ParseRequestURI(slackUrl); errParsingUrl != nil {
-			setupLog.Error(errParsingUrl, "Failed to parse SLACK_WEBHOOK_URL! Exiting now...")
+			setupLog.Error(errParsingUrl, "Failed to parse slack url! Exiting now...")
 			os.Exit(1)
 		}
 		// we can simply keep on adding other alert urls to notificationChannels

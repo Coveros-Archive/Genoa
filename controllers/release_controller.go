@@ -101,7 +101,7 @@ func (r *ReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		if errCleaningUp := r.cleanup(cr, helmV3); errCleaningUp != nil {
 			return ctrl.Result{}, errCleaningUp
 		}
-		r.sendNotification(fmt.Sprintf("Namespace/Name: %s\nRelease deleted :ghost:", req.NamespacedName))
+		r.sendNotification(fmt.Sprintf("*%s*\n>*Chart*: %s\n>*Version*: %s\n>Release deleted :ghost:", req.NamespacedName, cr.Spec.Chart, cr.Spec.Version))
 		return ctrl.Result{}, nil // do not requeue
 	}
 
@@ -134,11 +134,11 @@ func (r *ReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			r.Log.Info(fmt.Sprintf("%v: downloaded chart at %v", req.NamespacedName, chartPath))
 			_, errInstallingChart := helmV3.InstallRelease(chartPath, installOptions, cr.Spec.ValuesOverride.V)
 			if errInstallingChart != nil {
-				r.sendNotification(fmt.Sprintf("Namespace/Name: %s\nRelease failed to install :bug: :%v", req.NamespacedName, errInstallingChart))
+				r.sendNotification(fmt.Sprintf("*%s*\n>*Chart*: %s\n>*Version*: %s\n>Release failed to install :bug:\n>%v", req.NamespacedName, cr.Spec.Chart, cr.Spec.Version, errInstallingChart))
 				return ctrl.Result{}, errInstallingChart
 			}
 			// force requeue to get new release state
-			r.sendNotification(fmt.Sprintf("Namespace/Name: %s\nRelease installed :rocket:", req.NamespacedName))
+			r.sendNotification(fmt.Sprintf("*%s*\n>*Chart*: %s\n>*Version*: %s\n>Release installed :rocket:", req.NamespacedName, cr.Spec.Chart, cr.Spec.Version))
 			return ctrl.Result{Requeue: true}, nil
 		}
 		return ctrl.Result{}, errGettingReleaseInfo
@@ -187,10 +187,10 @@ func (r *ReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			Force:                    cr.Spec.ForceUpgrade,
 		}
 		if _, errUpgradingRelease := helmV3.UpgradeRelease(chartPath, upgradeOpts, cr.Spec.ValuesOverride.V); errUpgradingRelease != nil {
-			r.sendNotification(fmt.Sprintf("Namespace/Name: %s\nRelease failed to upgrade :bug: :%v", req.NamespacedName, errUpgradingRelease))
+			r.sendNotification(fmt.Sprintf("*%s*\n>*Chart*: %s\n>*Version*: %s\n>Release failed to upgrade :bug:\n>%v", req.NamespacedName, cr.Spec.Chart, cr.Spec.Version, errUpgradingRelease))
 			return ctrl.Result{}, errUpgradingRelease
 		}
-		r.sendNotification(fmt.Sprintf("Namespace/Name: %s\nRelease upgraded :rocket:", req.NamespacedName))
+		r.sendNotification(fmt.Sprintf("*%s*\n>*Chart*: %s\n>*Version*: %s\n>Release upgraded :rocket:", req.NamespacedName, cr.Spec.Chart, cr.Spec.Version))
 		r.Log.Info(fmt.Sprintf("Successfully upgraded helm release for %v", req.NamespacedName))
 	}
 

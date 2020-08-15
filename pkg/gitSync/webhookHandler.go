@@ -3,34 +3,32 @@ package gitSync
 import (
 	"coveros.com/pkg/factories/git"
 	"fmt"
+	"github.com/go-logr/logr"
 	"github.com/google/go-github/github"
 	lab "github.com/xanzy/go-gitlab"
 	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-
 	"strings"
 )
 
-var log = logf.Log.WithName("gitSync.webhookHandler")
-
 type WebhookHandler struct {
 	Client client.Client
+	Logger logr.Logger
 }
 
 func (wH WebhookHandler) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 	git := git.GitFactory(r)
-	log.Info(fmt.Sprintf("Git provider: %T", git))
+	wH.Logger.Info(fmt.Sprintf("Git provider: %T", git))
 	eventType, errParsingWebhookReq := git.ParseWebhook(r)
 	if errParsingWebhookReq != nil {
-		log.Error(errParsingWebhookReq, "Failed to parse git webhook")
+		wH.Logger.Error(errParsingWebhookReq, "Failed to parse git webhook")
 		return
 	}
 	switch e := eventType.(type) {
 	case *github.PushEvent, *lab.PushEvent:
 		wH.handleGitPushEvents(git.PushEventToPushEventMeta(e), git)
 	default:
-		log.Info("Git webhook event type not supported: %T ... skipping...", github.WebHookType(r))
+		wH.Logger.Info("Git webhook event type not supported: %T ... skipping...", github.WebHookType(r))
 		return
 	}
 }

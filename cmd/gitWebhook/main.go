@@ -29,10 +29,11 @@ func main() {
 	k8sClient, err := client.New(config.GetConfigOrDie(), client.Options{Scheme: scheme})
 	if err != nil {
 		logger.Error(err, "Failed to create a k8s client")
+		os.Exit(1)
 	}
 
-	logger.Info("Starting webhook server on port :8080...")
-	gitWebhook := gitSync.WebhookHandler{Client: k8sClient}
+	logger.Info("Starting webhook server on port :8081...")
+	gitWebhook := gitSync.WebhookHandler{Client: k8sClient, Logger: logger}
 	http.HandleFunc("/health", healthCheck)
 	http.HandleFunc("/webhook", gitWebhook.HandleWebhook)
 	if err := http.ListenAndServe(":8081", nil); err != nil {

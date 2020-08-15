@@ -31,7 +31,8 @@ spec:
     plural: releases
     singular: release
   scope: Namespaced
-  subresources: {}
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       description: Release is the Schema for the Releases API
@@ -81,6 +82,11 @@ spec:
           type: object
         status:
           description: ReleaseStatus defines the observed state of Release
+          properties:
+            revisionNumber:
+              type: integer
+          required:
+          - revisionNumber
           type: object
       type: object
   version: v1alpha1

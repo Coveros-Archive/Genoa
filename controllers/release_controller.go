@@ -117,22 +117,10 @@ func (r *ReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 				}
 				return ctrl.Result{}, errPullingChart
 			}
-
 			defer os.RemoveAll(strings.Split(chartPath, "/")[0])
-
-			installOptions := v3.InstallOptions{
-				Namespace:                hrNamespace,
-				DryRun:                   cr.Spec.DryRun,
-				Wait:                     cr.Spec.Wait,
-				Timeout:                  time.Duration(cr.Spec.WaitTimeout),
-				ReleaseName:              hrName,
-				DisableHooks:             cr.Spec.DisableHooks,
-				DisableOpenAPIValidation: cr.Spec.DisableOpenAPIValidation,
-				Atomic:                   cr.Spec.Atomic,
-				IncludeCRDs:              cr.Spec.IncludeCRDs,
-			}
 			r.Log.Info(fmt.Sprintf("%v: downloaded chart at %v", req.NamespacedName, chartPath))
-			_, errInstallingChart := helmV3.InstallRelease(chartPath, installOptions, cr.Spec.ValuesOverride.V)
+			installOpts := getReleaseInstallOptions(cr)
+			_, errInstallingChart := helmV3.InstallRelease(chartPath, installOpts, cr.Spec.ValuesOverride.V)
 			if errInstallingChart != nil {
 				r.sendNotification(fmt.Sprintf("*%s*\n>*Chart*: %s\n>*Version*: %s\n>Release failed to install :bug:\n>%v", req.NamespacedName, cr.Spec.Chart, cr.Spec.Version, errInstallingChart))
 				return ctrl.Result{}, errInstallingChart
@@ -157,6 +145,7 @@ func (r *ReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	valuesInSync := reflect.DeepEqual(cr.Spec.ValuesOverride.V, releaseValuesOverride)
 	chartVersionInSync := cr.Spec.Version == releaseInfo.Chart.Metadata.Version
 	chartNameInSync := justChartName == releaseInfo.Chart.Metadata.Name
+	//releaseRevisionInSync := cr.Status.RevisionNumber == releaseInfo.Version
 
 	if !chartNameInSync || !chartVersionInSync || !valuesInSync {
 		r.Log.Info(fmt.Sprintf("%v release values in sync with installed values: %v", req.NamespacedName, valuesInSync))
@@ -173,25 +162,33 @@ func (r *ReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		}
 		defer os.RemoveAll(strings.Split(chartPath, "/")[0])
 
-		upgradeOpts := v3.UpgradeOptions{
-			Namespace:                hrNamespace,
-			DryRun:                   cr.Spec.DryRun,
-			Wait:                     cr.Spec.Wait,
-			Timeout:                  time.Duration(cr.Spec.WaitTimeout),
-			ReleaseName:              hrName,
-			DisableHooks:             cr.Spec.DisableHooks,
-			DisableOpenAPIValidation: cr.Spec.DisableOpenAPIValidation,
-			Atomic:                   cr.Spec.Atomic,
-			CleanupOnFail:            cr.Spec.CleanupOnFail,
-			SkipCRDs:                 !cr.Spec.IncludeCRDs,
-			Force:                    cr.Spec.ForceUpgrade,
-		}
+		// TODO: need to figure out what to when we get immutable error from a revision rollback
+		/**
+		Example: error
+		Service is invalid: spec.clusterIP: Invalid value: "":
+		field is immutable &&
+		failed to replace object: Service "jenkins" is invalid: spec.clusterIP: Invalid value: "": field is immutable
+		*/
+		//if !releaseRevisionInSync {
+		//	r.Log.Info(fmt.Sprintf("%v rolling back to revision number: %v", req.NamespacedName, cr.Status.RevisionNumber))
+		//	newRevisionNumber := (releaseInfo.Version - cr.Status.RevisionNumber) + cr.Status.RevisionNumber + 1
+		//	rollBackOpts := v3.RollbackToRevisionOptions{Force: true, ToRevision: cr.Status.RevisionNumber}
+		//	if errRollingBack := helmV3.RollbackToRevision(hrName, rollBackOpts); errRollingBack != nil {
+		//		return ctrl.Result{}, errRollingBack
+		//	}
+		//	r.Log.Info(fmt.Sprintf("%v successfully rolled back to revision number: %v", req.NamespacedName, cr.Status.RevisionNumber))
+		//	cr.Status.RevisionNumber = newRevisionNumber
+		//	r.Log.Info(fmt.Sprintf("%v new revision number: %v", req.NamespacedName, newRevisionNumber))
+		//	return ctrl.Result{}, r.Client.Status().Update(context.TODO(), cr)
+		//}
+		upgradeOpts := getReleaseUpgradeOptions(cr)
 		if _, errUpgradingRelease := helmV3.UpgradeRelease(chartPath, upgradeOpts, cr.Spec.ValuesOverride.V); errUpgradingRelease != nil {
 			r.sendNotification(fmt.Sprintf("*%s*\n>*Chart*: %s\n>*Version*: %s\n>Release failed to upgrade :bug:\n>%v", req.NamespacedName, cr.Spec.Chart, cr.Spec.Version, errUpgradingRelease))
 			return ctrl.Result{}, errUpgradingRelease
 		}
 		r.sendNotification(fmt.Sprintf("*%s*\n>*Chart*: %s\n>*Version*: %s\n>Release upgraded :rocket:", req.NamespacedName, cr.Spec.Chart, cr.Spec.Version))
 		r.Log.Info(fmt.Sprintf("Successfully upgraded helm release for %v", req.NamespacedName))
+		return ctrl.Result{}, nil
 	}
 
 	return ctrl.Result{}, nil

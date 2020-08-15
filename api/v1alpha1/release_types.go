@@ -99,8 +99,7 @@ func (v *Values) UnmarshalJSON(data []byte) error {
 
 // ReleaseStatus defines the observed state of Release
 type ReleaseStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	RevisionNumber int `json:"revisionNumber"`
 }
 
 // +kubebuilder:object:root=true
@@ -111,6 +110,7 @@ type ReleaseStatus struct {
 // +kubebuilder:printcolumn:name="chart",type=string,JSONPath=.spec.chart
 // +kubebuilder:printcolumn:name="chart-version",type=string,JSONPath=.spec.version
 // +kubebuilder:printcolumn:name="age",type=date,JSONPath=.metadata.creationTimestamp
+// +kubebuilder:subresource:status
 type Release struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

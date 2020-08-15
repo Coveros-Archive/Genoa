@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"helm.sh/helm/v3/pkg/release"
 	"strings"
+	"time"
 )
 
 func (r *ReleaseReconciler) cleanup(cr *v1alpha1.Release, actionConfig *v3.HelmV3) error {
@@ -90,4 +91,37 @@ func isReleasePending(releaseInfo *release.Release) bool {
 		return true
 	}
 	return false
+}
+
+func getReleaseInstallOptions(cr *v1alpha1.Release) v3.InstallOptions {
+	spec := cr.Spec
+	installOptions := v3.InstallOptions{
+		Namespace:                cr.GetNamespace(),
+		DryRun:                   spec.DryRun,
+		Wait:                     spec.Wait,
+		Timeout:                  time.Duration(spec.WaitTimeout),
+		ReleaseName:              cr.GetName(),
+		DisableHooks:             spec.DisableHooks,
+		DisableOpenAPIValidation: spec.DisableOpenAPIValidation,
+		Atomic:                   spec.Atomic,
+		IncludeCRDs:              spec.IncludeCRDs,
+	}
+	return installOptions
+}
+
+func getReleaseUpgradeOptions(cr *v1alpha1.Release) v3.UpgradeOptions {
+	upgradeOpts := v3.UpgradeOptions{
+		Namespace:                cr.GetNamespace(),
+		DryRun:                   cr.Spec.DryRun,
+		Wait:                     cr.Spec.Wait,
+		Timeout:                  time.Duration(cr.Spec.WaitTimeout),
+		ReleaseName:              cr.GetName(),
+		DisableHooks:             cr.Spec.DisableHooks,
+		DisableOpenAPIValidation: cr.Spec.DisableOpenAPIValidation,
+		Atomic:                   cr.Spec.Atomic,
+		CleanupOnFail:            cr.Spec.CleanupOnFail,
+		SkipCRDs:                 !cr.Spec.IncludeCRDs,
+		Force:                    cr.Spec.ForceUpgrade,
+	}
+	return upgradeOpts
 }

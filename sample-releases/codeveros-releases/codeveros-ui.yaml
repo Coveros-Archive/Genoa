@@ -6,6 +6,4 @@ metadata:
 spec:
   chart: codeveros/codeveros-ui
   version: 0.5.1
-  wait: true
-  waitTimeout: 1
   values: {}

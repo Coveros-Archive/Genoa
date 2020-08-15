@@ -9,7 +9,7 @@ deployments:
     image:
       repository: agill17/genoa
       pullPolicy: Always
-      tag: 0.4.1
+      tag: 0.5.0
     imagePullSecrets: []
     labels: {}
     annotations: {}
@@ -31,7 +31,7 @@ deployments:
     image:
       repository: agill17/genoa
       pullPolicy: Always
-      tag: 0.4.1
+      tag: 0.5.0
     imagePullSecrets: []
     labels: {}
     annotations: {}
@@ -60,15 +60,15 @@ config:
     deployDir: deploy/
     # you can generate webhookSecret using $ ruby -rsecurerandom -e 'puts SecureRandom.hex(20)'
     # set that value here and also set the same value in your github webhook configuration(s)
-    #webhookSecret: "required-if-using-github"
-    #accessToken: "required-if-using-github"
+    #webhookSecret: ""
+    #accessToken: ""
   gitlab:
     enabled: false
-    #deployDir: deploy/
+    deployDir: deploy/
     ## you can generate webhookSecret using $ ruby -rsecurerandom -e 'puts SecureRandom.hex(20)'
     ## set that value here and also set the same value in your gitlab webhook configuration(s)
-    #webhookSecret: "required-if-using-gitlab"
-    #accessToken: "required-if-using-gitlab"
+    #webhookSecret: ""
+    #accessToken: ""
   helmRepos: |
     apiVersion: v1
     repositories:

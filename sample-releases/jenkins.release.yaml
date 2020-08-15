@@ -1,0 +1,17 @@
+apiVersion: coveros.apps.com/v1alpha1
+kind: Release
+metadata:
+  name: jenkins
+  annotations:
+    "coveros.apps.helmRelease/autoDeleteNamespace": "true"
+    "coveros.apps.helmRelease/follow-git-branch": "master"
+spec:
+  chart: stable/jenkins
+  version: 2.3.1
+  wait: false
+  values:
+    master:
+      adminUser: admin
+      adminPassword: password
+    persistence:
+      enabled: false

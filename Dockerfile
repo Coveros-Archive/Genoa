@@ -10,13 +10,14 @@ COPY go.sum go.sum
 RUN go mod download
 
 # Copy the go source
-COPY main.go main.go
+COPY cmd/ cmd/
 COPY api/ api/
 COPY pkg/ pkg/
 COPY controllers/ controllers/
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o genoa main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o genoa cmd/releaser/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o gitWebhook cmd/gitWebhook/main.go
 
 FROM alpine:3.10
 
@@ -27,5 +28,6 @@ RUN wget https://get.helm.sh/helm-v3.2.4-linux-amd64.tar.gz \
 COPY repositories.yaml /root/.config/helm/repositories.yaml
 RUN helm repo udpate
 COPY --from=builder /workspace/genoa /
+COPY --from=builder /workspace/gitWebhook /
 
 ENTRYPOINT ["/genoa"]

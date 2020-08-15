@@ -3,43 +3,56 @@
 #nameOverride: ""
 #fullnameOverride: ""
 
-deployment:
-  replicaCount: 1
-  image:
-    repository: agill17/genoa
-    pullPolicy: Always
-    tag: 0.3.1
-  imagePullSecrets: []
-  labels: {}
-  annotations: {}
-  volumes: []
-  volumeMounts: []
-  podAnnotations: {}
-  podLabels: {}
-  initContainers: []
-  envVars: []
-  ### If you want to send slack notifications, then setup a slack webhook url
-  ## Typical slack webhook url : https://hooks.slack.com/services/token-a/token-b/token-c
-  ### Change the above to      : slack://appORbotname@token-a/token-b/token-c
-#  - name: SLACK_WEBHOOK_URL
-#    value: slack://appORbotname@token-a/token-b/token-c
-  nodeSelector: {}
-  livenessProbe:
-    httpGet:
-      port: 8081
-      path: /health
-    initialDelaySeconds: 10
-    periodSeconds: 30
-    timeoutSeconds: 10
-    successThreshold: 1
-    failureThreshold: 3
-  resources: {}
-#    limits:
-#      cpu: 500m
-#      memory: 1Gi
-#    requests:
-#      cpu: 100m
-#      memory: 500Mi
+deployments:
+  genoa:
+    replicaCount: 1
+    image:
+      repository: agill17/genoa
+      pullPolicy: Always
+      tag: 0.4.1
+    imagePullSecrets: []
+    labels: {}
+    annotations: {}
+    volumes: []
+    volumeMounts: []
+    podAnnotations: {}
+    podLabels: {}
+    initContainers: []
+    envVars: []
+    ### If you want to send slack notifications, then setup a slack webhook url
+    ## Typical slack webhook url : https://hooks.slack.com/services/token-a/token-b/token-c
+    ### Change the above to      : slack://appORbotname@token-a/token-b/token-c
+    #  - name: SLACK_WEBHOOK_URL
+    #    value: slack://appORbotname@token-a/token-b/token-c
+    nodeSelector: {}
+    resources: {}
+  gitWebhook:
+    replicaCount: 1
+    image:
+      repository: agill17/genoa
+      pullPolicy: Always
+      tag: 0.4.1
+    imagePullSecrets: []
+    labels: {}
+    annotations: {}
+    volumes: []
+    volumeMounts: []
+    podAnnotations: {}
+    podLabels: {}
+    initContainers: []
+    envVars: []
+    nodeSelector: {}
+    livenessProbe:
+      httpGet:
+        port: 8081
+        path: /health
+      initialDelaySeconds: 10
+      periodSeconds: 30
+      timeoutSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+    resources: {}
+
 
 config:
   github:

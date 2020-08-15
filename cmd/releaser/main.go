@@ -17,12 +17,9 @@ limitations under the License.
 package main
 
 import (
-	"coveros.com/pkg/gitSync"
 	v3 "coveros.com/pkg/helm/v3"
 	"flag"
-	"fmt"
 	"github.com/containrrr/shoutrrr/pkg/router"
-	"net/http"
 	"net/url"
 	"os"
 	"time"
@@ -63,8 +60,8 @@ func main() {
 	var notificationSender *router.ServiceRouter
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
-		"Enable leader election for controller manager. "+
-			"Enabling this will ensure there is only one active controller manager.")
+		"Enable leader election for release manager. "+
+			"Enabling this will ensure there is only one active release manager.")
 	flag.StringVar(&customRepoConfigPath, "custom-helm-repos-file", "", "Your own custom helm repo files")
 	flag.Parse()
 
@@ -91,18 +88,6 @@ func main() {
 			os.Exit(1)
 		}
 	}
-
-	go func() {
-		setupLog.Info("Starting http server on :8081... ")
-		wH := gitSync.WebhookHandler{Client: mgr.GetClient()}
-		http.HandleFunc("/webhook", wH.HandleWebhook)
-		http.HandleFunc("/health", healthCheck)
-		if err := http.ListenAndServe(":8081", nil); err != nil {
-			setupLog.Error(err, "Failed to start and server http webhook server on port 8081...")
-			os.Exit(1)
-		}
-
-	}()
 
 	releaseReconciler := &controllers.ReleaseReconciler{
 		Client: mgr.GetClient(),
@@ -143,7 +128,4 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
-}
-func healthCheck(wr http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(wr, "OK")
 }

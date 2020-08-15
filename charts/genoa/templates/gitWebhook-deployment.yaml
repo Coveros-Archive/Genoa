@@ -1,80 +1,74 @@
-{{- $root := . }}
-{{- with .Values.deployments.genoa }}
+{{ $root := . }}
+{{- with .Values.deployments.gitWebhook }}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "genoa.fullname" $root }}
+  name: {{ template "genoa.fullname" $root }}-gitwebhook
   namespace: {{ $root.Release.Namespace }}
   {{- if .labels }}
   labels:
-{{ toYaml .labels | indent 4 }}
+  {{ toYaml .labels | indent 4 }}
   {{- end }}
   {{- if .annotations }}
   annotations:
-{{ toYaml .annotations | indent 4 }}
+  {{ toYaml .annotations | indent 4 }}
   {{- end }}
 spec:
   selector:
     matchLabels:
-      name: genoa
+      name: genoa-gitwebhook
       {{- if .podLabels }}
-{{ toYaml .podLabels | indent 6 }}
-      {{- end }}
+      {{ toYaml .podLabels | indent 6 }}
+  {{- end }}
   replicas: {{ .replicaCount | default 1 }}
   template:
     metadata:
       labels:
-        name: genoa
+        name: genoa-gitwebhook
       {{- if .podLabels }}
-{{ toYaml .podLabels | indent 8 }}
+      {{ toYaml .podLabels | indent 8 }}
       {{- end }}
       annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") $root | sha256sum }}
         {{- if .podAnnotations }}
-{{ toYaml .podAnnotations | indent 8 }}
+        {{ toYaml .podAnnotations | indent 8 }}
         {{- end }}
     spec:
       {{- if .nodeSelector }}
       nodeSelector:
-{{ toYaml .nodeSelector | indent 8 }}
+      {{ toYaml .nodeSelector | indent 8 }}
       {{- end }}
       serviceAccountName: {{ include "genoa.fullname" $root }}
-      volumes:
-      - name: additional-helm-repos
-        secret:
-          secretName: additional-helm-repos
       {{- if .volumes }}
-{{ toYaml .volumes | indent 6 }}
+      {{ toYaml .volumes | indent 6 }}
       {{- end }}
       {{- if .imagePullSecrets }}
       imagePullSecrets:
-{{ toYaml .imagePullSecrets | indent 6 }}
+      {{ toYaml .imagePullSecrets | indent 6 }}
       {{- end }}
       {{- if .initContainers }}
       initContainers:
-{{- toYaml .initContainers | indent 6 }}
+      {{- toYaml .initContainers | indent 6 }}
       {{- end }}
       containers:
-      - name: {{ include "genoa.fullname" $root }}
+      - name: {{ include "genoa.fullname" $root }}-gitwebhook
         command:
-        - /genoa
-        args:
-        - --enable-leader-election
-        - --custom-helm-repos-file=/tmp/additional-helm-repos-config.yaml
+          - /gitWebhook
         image: {{ .image.repository }}:{{ .image.tag }}
         imagePullPolicy: {{ .image.pullPolicy }}
-        volumeMounts:
-        - mountPath: /tmp
-          name: additional-helm-repos
         {{- if .volumeMounts }}
-{{ toYaml .volumeMounts | indent 8 }}
+        {{ toYaml .volumeMounts | indent 8 }}
         {{- end }}
         {{- if .resources }}
         resources:
-{{ toYaml .resources | indent 10 }}
+        {{ toYaml .resources | indent 10 }}
         {{- end }}
+        envFrom:
+          - secretRef:
+              name: {{ include "genoa.fullname" $root }}
         {{- if .envVars }}
         env:
-{{ toYaml .envVars | indent 8 }}
-        {{- end }}
-  {{- end }}
-
+        {{ toYaml .envVars | indent 8 }}
+      {{- end }}
+{{- end }}

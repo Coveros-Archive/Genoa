@@ -24,9 +24,15 @@ func (wH WebhookHandler) syncReleaseWithGithub(owner, repo, branch, SHA, release
 	}
 
 	hrFromGit := &v1alpha1.Release{}
-	_, _, err := scheme.Codecs.UniversalDeserializer().Decode([]byte(gitFileContents), nil, hrFromGit)
+	_, gvk, err := scheme.Codecs.UniversalDeserializer().Decode([]byte(gitFileContents), nil, hrFromGit)
 	if err != nil {
 		log.Error(err, "Could not decode release file from git, perhaps its not a release file..")
+		return
+	}
+	if gvk.Kind != "Release" &&
+		gvk.Version != v1alpha1.GroupVersion.Version &&
+		gvk.Group != v1alpha1.GroupVersion.Group {
+		log.Info(fmt.Sprintf("Not a valid release %v from %v/%v git repo", releaseFile, owner, repo))
 		return
 	}
 

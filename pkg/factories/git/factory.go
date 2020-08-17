@@ -24,7 +24,7 @@ type Git interface {
 	GetDeployDir() string
 }
 
-func GitFactory(req *http.Request) Git {
+func Factory(req *http.Request) Git {
 	isGithubReq := req.Header.Get(GithubEventHeaderKey)
 	if isGithubReq != "" {
 		return NewGithub(os.Getenv(EnvVarGithubPersonalAccessToken))

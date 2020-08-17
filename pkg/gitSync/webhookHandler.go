@@ -3,6 +3,7 @@ package gitSync
 import (
 	"coveros.com/pkg/factories/git"
 	"fmt"
+	cNotifyLib "github.com/coveros/notification-library"
 	"github.com/go-logr/logr"
 	"github.com/google/go-github/github"
 	lab "github.com/xanzy/go-gitlab"
@@ -14,10 +15,11 @@ import (
 type WebhookHandler struct {
 	Client client.Client
 	Logger logr.Logger
+	Notify cNotifyLib.Notify
 }
 
 func (wH WebhookHandler) HandleWebhook(w http.ResponseWriter, r *http.Request) {
-	git := git.GitFactory(r)
+	git := git.Factory(r)
 	wH.Logger.Info(fmt.Sprintf("Git provider: %T", git))
 	eventType, errParsingWebhookReq := git.ParseWebhook(r)
 	if errParsingWebhookReq != nil {

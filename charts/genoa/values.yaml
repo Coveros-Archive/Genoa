@@ -19,11 +19,6 @@ deployments:
     podLabels: {}
     initContainers: []
     envVars: []
-    ### If you want to send slack notifications, then setup a slack webhook url
-    ## Typical slack webhook url : https://hooks.slack.com/services/token-a/token-b/token-c
-    ### Change the above to      : slack://appORbotname@token-a/token-b/token-c
-    #  - name: SLACK_WEBHOOK_URL
-    #    value: slack://appORbotname@token-a/token-b/token-c
     nodeSelector: {}
     resources: {}
   gitWebhook:
@@ -55,16 +50,21 @@ deployments:
 
 
 config:
+  notification:
+    #enabled: true
+    #provider: "slack"
+    #defaultChannelID: ""
+    #token: ""
   github:
-    enabled: false
-    deployDir: deploy/
+    #enabled: true
+    #deployDir: deploy/
     # you can generate webhookSecret using $ ruby -rsecurerandom -e 'puts SecureRandom.hex(20)'
     # set that value here and also set the same value in your github webhook configuration(s)
     #webhookSecret: ""
     #accessToken: ""
-  gitlab:
-    enabled: false
-    deployDir: deploy/
+  gitlab: {}
+    #enabled: false
+    #deployDir: deploy/
     ## you can generate webhookSecret using $ ruby -rsecurerandom -e 'puts SecureRandom.hex(20)'
     ## set that value here and also set the same value in your gitlab webhook configuration(s)
     #webhookSecret: ""
@@ -99,14 +99,12 @@ extraConfigMaps: []
 ## because helm client inside operator would need freedom to install releases
 clusterRole: cluster-admin
 
-ingress:
-  enabled: false
-  labels: {}
-  annotations: {}
+ingress: {}
+  #enabled: false
+  #labels: {}
+  #annotations: {}
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
-  host: genoa.foo.com
-  tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
+  #host: genoa.foo.com
+  #tls: []
+  #hosts: []

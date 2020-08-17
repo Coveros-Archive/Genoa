@@ -72,6 +72,11 @@ spec:
         resources:
 {{ toYaml .resources | indent 10 }}
         {{- end }}
+        {{- if $root.Values.config.notification.enabled }}
+        envFrom:
+        - secretRef:
+            name: notification-secret
+        {{- end }}
         {{- if .envVars }}
         env:
 {{ toYaml .envVars | indent 8 }}

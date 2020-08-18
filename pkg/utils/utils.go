@@ -4,6 +4,7 @@ import (
 	"context"
 	"coveros.com/api/v1alpha1"
 	"errors"
+	cNotifyLib "github.com/coveros/notification-library"
 	"github.com/ghodss/yaml"
 	"io"
 	v1 "k8s.io/api/core/v1"
@@ -152,4 +153,32 @@ func DownloadFile(filepath, url, username, password string) (err error) {
 	_, err = io.Copy(out, resp.Body)
 	return err
 
+}
+
+func GetChannelIDForNotification(runtimeObjMeta metav1.ObjectMeta) string {
+	channelToNotify := os.Getenv("DEFAULT_CHANNEL_ID")
+	if channelID, ok := runtimeObjMeta.Annotations[SlackChannelIDAnnotation]; ok {
+		channelToNotify = channelID
+	}
+	return channelToNotify
+}
+
+func getNotificationProvider() cNotifyLib.NotificationProvider {
+	notificationProvider := cNotifyLib.Noop
+	if val, ok := os.LookupEnv(EnvVarNotificationProvider); ok {
+		notificationProvider = cNotifyLib.NotificationProvider(val)
+	}
+	return notificationProvider
+}
+
+func getNotificationProviderToken() string {
+	notificationProviderToken := ""
+	if val, ok := os.LookupEnv(EnvVarNotificationProviderToken); ok {
+		notificationProviderToken = val
+	}
+	return notificationProviderToken
+}
+
+func NewNotifier() cNotifyLib.Notify {
+	return cNotifyLib.NewNotificationProvider(getNotificationProvider(), getNotificationProviderToken())
 }

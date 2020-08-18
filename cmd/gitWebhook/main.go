@@ -3,8 +3,8 @@ package main
 import (
 	coverosv1alpha1 "coveros.com/api/v1alpha1"
 	"coveros.com/pkg/gitSync"
+	"coveros.com/pkg/utils"
 	"fmt"
-	cNotifyLib "github.com/coveros/notification-library"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"net/http"
@@ -16,22 +16,13 @@ import (
 )
 
 var (
-	scheme                    = runtime.NewScheme()
-	logger                    = ctrl.Log.WithName("gitWebhook")
-	notificationProvider      = cNotifyLib.Noop
-	defaultChannelID          = ""
-	notificationProviderToken = ""
+	scheme = runtime.NewScheme()
+	logger = ctrl.Log.WithName("gitWebhook")
 )
 
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = coverosv1alpha1.AddToScheme(scheme)
-	if val, ok := os.LookupEnv("NOTIFICATION_PROVIDER"); ok {
-		notificationProvider = cNotifyLib.NotificationProvider(val)
-	}
-	if val, ok := os.LookupEnv("NOTIFICATION_PROVIDER_TOKEN"); ok {
-		notificationProviderToken = val
-	}
 }
 
 func main() {
@@ -41,10 +32,9 @@ func main() {
 		logger.Error(err, "Failed to create a k8s client")
 		os.Exit(1)
 	}
-	notifier := cNotifyLib.NewNotificationProvider(notificationProvider, notificationProviderToken)
 
 	logger.Info("Starting webhook server on port :8081...")
-	gitWebhook := gitSync.WebhookHandler{Client: k8sClient, Logger: logger, Notify: notifier}
+	gitWebhook := gitSync.WebhookHandler{Client: k8sClient, Logger: logger, Notify: utils.NewNotifier()}
 	http.HandleFunc("/health", healthCheck)
 	http.HandleFunc("/webhook", gitWebhook.HandleWebhook)
 	if err := http.ListenAndServe(":8081", nil); err != nil {

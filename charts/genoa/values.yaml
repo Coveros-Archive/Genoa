@@ -55,7 +55,7 @@ config:
     #provider: "slack"
     #defaultChannelID: ""
     #token: ""
-  github:
+  github: {}
     #enabled: true
     #deployDir: deploy/
     # you can generate webhookSecret using $ ruby -rsecurerandom -e 'puts SecureRandom.hex(20)'

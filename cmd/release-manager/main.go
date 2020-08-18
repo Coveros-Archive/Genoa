@@ -18,9 +18,8 @@ package main
 
 import (
 	v3 "coveros.com/pkg/helm/v3"
+	"coveros.com/pkg/utils"
 	"flag"
-	"github.com/containrrr/shoutrrr/pkg/router"
-	"net/url"
 	"os"
 	"time"
 
@@ -32,7 +31,6 @@ import (
 
 	coverosv1alpha1 "coveros.com/api/v1alpha1"
 	"coveros.com/controllers"
-	"github.com/containrrr/shoutrrr"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -41,13 +39,8 @@ var (
 	setupLog = ctrl.Log.WithName("setup")
 )
 
-const (
-	SlackUrlEnvVar = "SLACK_WEBHOOK_URL"
-)
-
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
-
 	_ = coverosv1alpha1.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }
@@ -56,8 +49,7 @@ func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var customRepoConfigPath string
-	var notificationChannels []string
-	var notificationSender *router.ServiceRouter
+
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for release manager. "+
@@ -90,31 +82,11 @@ func main() {
 	}
 
 	releaseReconciler := &controllers.ReleaseReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("release"),
-		Scheme: mgr.GetScheme(),
-		Cfg:    mgr.GetConfig(),
-	}
-
-	// if slackUrl is set, add that to list of notification channels
-	if slackUrl, ok := os.LookupEnv(SlackUrlEnvVar); ok {
-		if _, errParsingUrl := url.ParseRequestURI(slackUrl); errParsingUrl != nil {
-			setupLog.Error(errParsingUrl, "Failed to parse slack url! Exiting now...")
-			os.Exit(1)
-		}
-		// we can simply keep on adding other alert urls to notificationChannels
-		// as long as it is supported by shoutrrr : https://containrrr.dev/shoutrrr/services/overview/
-		notificationChannels = append(notificationChannels, slackUrl)
-	}
-
-	// if notificationChannels has any urls, we need to setup a notification router
-	if len(notificationChannels) > 0 {
-		notificationSender, err = shoutrrr.CreateSender(notificationChannels...)
-		if err != nil {
-			setupLog.Error(err, "Failed to setup a notification sender.. exiting now..")
-			os.Exit(1)
-		}
-		releaseReconciler.NotificationSender = notificationSender
+		Client:   mgr.GetClient(),
+		Log:      ctrl.Log.WithName("controllers").WithName("release"),
+		Scheme:   mgr.GetScheme(),
+		Cfg:      mgr.GetConfig(),
+		Notifier: utils.NewNotifier(),
 	}
 
 	if err = releaseReconciler.SetupWithManager(mgr); err != nil {

@@ -9,15 +9,8 @@ import (
 	cNotifyLib "github.com/coveros/notification-library"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes/scheme"
-	"os"
 	"reflect"
 )
-
-var defaultChannelToNotify string
-
-func init() {
-	defaultChannelToNotify = os.Getenv("DEFAULT_CHANNEL_ID")
-}
 
 func (wH WebhookHandler) syncReleaseWithGithub(owner, repo, branch, SHA, releaseFile string, gitFactory git.Git, isRemovedFromGithub bool) {
 	var readFileFrom = branch
@@ -52,9 +45,7 @@ func (wH WebhookHandler) syncReleaseWithGithub(owner, repo, branch, SHA, release
 		hrFromGit.SetNamespace("default")
 	}
 
-	if channelID, ok := hrFromGit.Annotations[utils.SlackChannelIDAnnotation]; ok {
-		defaultChannelToNotify = channelID
-	}
+	notificationChannel := utils.GetChannelIDForNotification(hrFromGit.ObjectMeta)
 
 	namespacedName := fmt.Sprintf("%s/%s", hrFromGit.GetNamespace(), hrFromGit.GetName())
 	ownerRepoBranch := fmt.Sprintf("%v/%v@%v", owner, repo, branch)
@@ -80,7 +71,7 @@ func (wH WebhookHandler) syncReleaseWithGithub(owner, repo, branch, SHA, release
 		}
 		wH.Logger.Info(fmt.Sprintf("Delete %v release from cluster initiated...", hrFromGit.GetName()))
 		wH.Notify.SendMsg(cNotifyLib.NotifyTemplate{
-			Channel:   defaultChannelToNotify,
+			Channel:   notificationChannel,
 			Title:     ":interrobang:" + namespacedName,
 			EventType: cNotifyLib.Warning,
 			Fields: map[string]string{
@@ -103,7 +94,7 @@ func (wH WebhookHandler) syncReleaseWithGithub(owner, repo, branch, SHA, release
 	if errCreatingHR != nil {
 		wH.Logger.Info(fmt.Sprintf("%v failed to create release : %v", namespacedName, errCreatingHR))
 		wH.Notify.SendMsg(cNotifyLib.NotifyTemplate{
-			Channel:   defaultChannelToNotify,
+			Channel:   notificationChannel,
 			Title:     namespacedName,
 			EventType: cNotifyLib.Failure,
 			Fields: map[string]string{
@@ -115,7 +106,7 @@ func (wH WebhookHandler) syncReleaseWithGithub(owner, repo, branch, SHA, release
 	}
 	wH.Logger.Info(fmt.Sprintf("Successfully created %v release in your cluster", namespacedName))
 	wH.Notify.SendMsg(cNotifyLib.NotifyTemplate{
-		Channel:   defaultChannelToNotify,
+		Channel:   notificationChannel,
 		Title:     ":rocket:" + namespacedName,
 		EventType: cNotifyLib.Success,
 		Fields: map[string]string{
@@ -135,7 +126,7 @@ func (wH WebhookHandler) syncReleaseWithGithub(owner, repo, branch, SHA, release
 		if errUpdating := wH.Client.Update(context.TODO(), hrFromCluster); errUpdating != nil {
 			wH.Logger.Error(errUpdating, fmt.Sprintf("Failed to apply release from %v/%v - %v", owner, repo, namespacedName))
 			wH.Notify.SendMsg(cNotifyLib.NotifyTemplate{
-				Channel:   defaultChannelToNotify,
+				Channel:   notificationChannel,
 				Title:     namespacedName,
 				EventType: cNotifyLib.Failure,
 				Fields: map[string]string{
@@ -149,7 +140,7 @@ func (wH WebhookHandler) syncReleaseWithGithub(owner, repo, branch, SHA, release
 
 		wH.Logger.Info(fmt.Sprintf("Updated release from %v/%v - %v", owner, repo, namespacedName))
 		wH.Notify.SendMsg(cNotifyLib.NotifyTemplate{
-			Channel:   defaultChannelToNotify,
+			Channel:   notificationChannel,
 			Title:     ":rocket:" + namespacedName,
 			EventType: cNotifyLib.Success,
 			Fields: map[string]string{

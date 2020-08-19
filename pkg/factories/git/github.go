@@ -24,7 +24,6 @@ func NewGithub(token string) *github {
 	if enterpriseUrl, ok := os.LookupEnv(utils.EnvVarGithubEnterpriseHostedUrl); ok && enterpriseUrl != "" {
 		githubClient, err = googleGithub.NewEnterpriseClient(enterpriseUrl, enterpriseUrl, tc)
 		if err != nil {
-			panic(err)
 			os.Exit(1)
 		}
 	}

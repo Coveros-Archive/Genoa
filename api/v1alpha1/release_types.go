@@ -27,6 +27,9 @@ import (
 // ReleaseSpec defines the desired state of Release
 type ReleaseSpec struct {
 	// +optional
+	DependsOn metav1.ObjectMeta `json:"dependsOn"`
+
+	// +optional
 	Atomic bool `json:"atomic"`
 
 	Chart string `json:"chart,required"`
@@ -99,7 +102,8 @@ func (v *Values) UnmarshalJSON(data []byte) error {
 
 // ReleaseStatus defines the observed state of Release
 type ReleaseStatus struct {
-	RevisionNumber int `json:"revisionNumber"`
+	RevisionNumber int  `json:"revisionNumber"`
+	Installed      bool `json:"installed"`
 }
 
 // +kubebuilder:object:root=true

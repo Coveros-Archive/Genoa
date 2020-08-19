@@ -28,6 +28,7 @@ import (
 	"helm.sh/helm/v3/pkg/storage/driver"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"os"
 	"reflect"
@@ -109,6 +110,26 @@ func (r *ReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, nil // do not requeue
 	}
 
+	if cr.Spec.DependsOn.GetName() != "" {
+		name := cr.Spec.DependsOn.GetName()
+		ns := cr.Spec.DependsOn.GetNamespace()
+		if ns == "" {
+			ns = "default"
+		}
+
+		dependsOnCr := &coverosv1alpha1.Release{}
+		if errGettingDependsOnCr := r.Client.Get(context.TODO(),
+			types.NamespacedName{Name: name, Namespace: ns}, dependsOnCr); errGettingDependsOnCr != nil {
+			return ctrl.Result{}, errGettingDependsOnCr
+		}
+		// wait until the parent release is installed
+		if !dependsOnCr.Status.Installed {
+			r.Log.Info(fmt.Sprintf("%v depends on %v/%v and is not ready yet.. will re-check back in a few...", req.NamespacedName, ns, name))
+			return ctrl.Result{Requeue: true, RequeueAfter: 60 * time.Second}, nil
+		}
+
+	}
+
 	releaseInfo, errGettingReleaseInfo := helmV3.GetRelease(hrName)
 	if errGettingReleaseInfo != nil {
 		if errors.Is(errGettingReleaseInfo, driver.ErrReleaseNotFound) {
@@ -147,7 +168,8 @@ func (r *ReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 					"Namespace": cr.GetNamespace(),
 					"Reason":    "Release installed successfully :smile:"},
 			})
-			return ctrl.Result{Requeue: true}, nil
+			cr.Status.Installed = true
+			return ctrl.Result{Requeue: true}, r.Client.Status().Update(context.TODO(), cr)
 		}
 		return ctrl.Result{}, errGettingReleaseInfo
 	}

@@ -2,6 +2,7 @@ package git
 
 import (
 	"context"
+	"coveros.com/pkg/utils"
 	"encoding/base64"
 	googleGithub "github.com/google/go-github/github"
 	"golang.org/x/oauth2"
@@ -18,7 +19,16 @@ func NewGithub(token string) *github {
 		&oauth2.Token{AccessToken: token},
 	)
 	tc := oauth2.NewClient(context.TODO(), ts)
-	return &github{client: googleGithub.NewClient(tc)}
+	githubClient := googleGithub.NewClient(tc)
+	var err error
+	if enterpriseUrl, ok := os.LookupEnv(utils.EnvVarGithubEnterpriseHostedUrl); ok && enterpriseUrl != "" {
+		githubClient, err = googleGithub.NewEnterpriseClient(enterpriseUrl, enterpriseUrl, tc)
+		if err != nil {
+			panic(err)
+			os.Exit(1)
+		}
+	}
+	return &github{client: githubClient}
 }
 
 func (g *github) GetFileContents(owner, repo, branch, file string) (string, error) {

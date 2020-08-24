@@ -6,4 +6,19 @@ metadata:
 spec:
   chart: codeveros/codeveros-ui
   version: 0.5.1
+  wait: true
+  waitTimeout: 1000
+  values: {}
+---
+apiVersion: coveros.apps.com/v1alpha1
+kind: Release
+metadata:
+  name: codeveros-ui-2
+  namespace: codeveros
+spec:
+  dependsOn:
+    name: codeveros-ui
+    namespace: codeveros
+  chart: codeveros/codeveros-ui
+  version: 0.5.1
   values: {}

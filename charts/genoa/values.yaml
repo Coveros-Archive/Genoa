@@ -50,7 +50,7 @@ deployments:
 
 
 config:
-  notification:
+  notification: {}
     #enabled: true
     #provider: "slack"
     #defaultChannelID: ""
@@ -62,6 +62,8 @@ config:
     # set that value here and also set the same value in your github webhook configuration(s)
     #webhookSecret: ""
     #accessToken: ""
+    ## if you are using github enterprise, provide the github enterprise url
+    #selfHostedUrl: ""
   gitlab: {}
     #enabled: false
     #deployDir: deploy/
@@ -69,6 +71,8 @@ config:
     ## set that value here and also set the same value in your gitlab webhook configuration(s)
     #webhookSecret: ""
     #accessToken: ""
+    ## if you are hosting your own gitlab, provide your hosted gitlab url
+    #selfHostedUrl: ""
   helmRepos: |
     apiVersion: v1
     repositories:

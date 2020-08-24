@@ -1,6 +1,7 @@
 package git
 
 import (
+	"coveros.com/pkg/utils"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -17,7 +18,11 @@ type gitlab struct {
 }
 
 func NewGitlab(token string) *gitlab {
-	client, err := lab.NewClient(token)
+	var labOptions []lab.ClientOptionFunc
+	if val, ok := os.LookupEnv(utils.EnvVarGitlabSelfHostedUrl); ok {
+		labOptions = append(labOptions, lab.WithBaseURL(val))
+	}
+	client, err := lab.NewClient(token, labOptions...)
 	if err != nil {
 		return nil
 	}

@@ -59,6 +59,8 @@ spec:
               type: string
             cleanupOnFail:
               type: boolean
+            dependsOn:
+              type: object
             disableHooks:
               type: boolean
             disableOpenAPIValidation:
@@ -84,9 +86,12 @@ spec:
         status:
           description: ReleaseStatus defines the observed state of Release
           properties:
+            installed:
+              type: boolean
             revisionNumber:
               type: integer
           required:
+          - installed
           - revisionNumber
           type: object
       type: object

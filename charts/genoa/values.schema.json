@@ -45,6 +45,9 @@
             },
             "webhookSecret": {
               "type": "string"
+            },
+            "selfHostedUrl": {
+              "type": "string"
             }
           },
           "dependencies": {
@@ -65,6 +68,9 @@
               "enum": [true, false]
             },
             "webhookSecret": {
+              "type": "string"
+            },
+            "selfHostedUrl": {
               "type": "string"
             }
           },

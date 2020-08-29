@@ -1,55 +1,35 @@
 package git
 
 import (
+	"coveros.com/pkg/utils"
 	"net/http"
-	"os"
 )
+
+type GitProvider string
 
 const (
-	GithubEventHeaderKey            = "X-Github-Event"
-	GitlabEventHeaderKey            = "X-Gitlab-Event"
-	GitlabWebhookSecretHeaderKey    = "X-Gitlab-Token"
-	EnvVarGithubReleaseFilesDir     = "GITHUB_DEPLOY_DIRECTORY"
-	EnvVarGitlabReleaseFilesDir     = "GITLAB_DEPLOY_DIRECTORY"
-	EnvVarGithubWebhookSecret       = "GITHUB_WEBHOOK_SECRET"
-	EnvVarGitlabWebhookSecret       = "GITLAB_WEBHOOK_SECRET"
-	EnvVarGithubPersonalAccessToken = "GITHUB_PERSONAL_ACCESS_TOKEN"
-	EnvVarGitlabPersonalAccessToken = "GITLAB_PERSONAL_ACCESS_TOKEN"
+	Github GitProvider = "github"
+	Gitlab GitProvider = "gitlab"
+	Noop   GitProvider = "noop"
+	// TODO: Add more as needed
 )
 
+// helper factory to lookup the correct env vars based on git provider webhook payload
 type Git interface {
-	GetFileContents(owner, repo, branch, file string) (string, error)
-	ParseWebhook(req *http.Request) (interface{}, error)
-	PushEventToPushEventMeta(pushEvent interface{}) *PushEventMeta
-	GetDeployDir() string
+	GetAccessToken() (string, error)
+	GetDeployDir() (string, error)
+	GetWebhookSecret() (string, error)
+	GetSelfHostedUrl() (string, error)
 }
 
-func Factory(req *http.Request) Git {
-	isGithubReq := req.Header.Get(GithubEventHeaderKey)
+func NewGitFactory(webhookReq *http.Request) (Git, GitProvider) {
+	isGithubReq := webhookReq.Header.Get(utils.GithubEventHeaderKey)
 	if isGithubReq != "" {
-		return NewGithub(os.Getenv(EnvVarGithubPersonalAccessToken))
+		return NewGithub(), Github
 	}
-
-	isGitlab := req.Header.Get(GitlabEventHeaderKey)
+	isGitlab := webhookReq.Header.Get(utils.GitlabEventHeaderKey)
 	if isGitlab != "" {
-		return NewGitlab(os.Getenv(EnvVarGitlabPersonalAccessToken))
+		return NewGitlab(), Gitlab
 	}
-	return nil
-}
-
-// custom push event struct to deal with factory pattern for diff git providers
-type PushEventMeta struct {
-	Ref     string
-	Commits []Commit
-	SHA     string
-	Before  string
-	After   string
-	Repo    string
-	Owner   string
-}
-type Commit struct {
-	Added    []string
-	Removed  []string
-	Modified []string
-	SHA      string
+	return nil, Noop
 }

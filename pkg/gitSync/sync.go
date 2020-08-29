@@ -3,27 +3,29 @@ package gitSync
 import (
 	"context"
 	"coveros.com/api/v1alpha1"
-	"coveros.com/pkg/factories/git"
 	"coveros.com/pkg/utils"
 	"fmt"
+	"github.com/agill17/go-scm/scm"
 	cNotifyLib "github.com/coveros/notification-library"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes/scheme"
 	"reflect"
 )
 
-func (wH WebhookHandler) syncReleaseWithGithub(owner, repo, branch, SHA, releaseFile string, gitFactory git.Git, isRemovedFromGithub bool) {
+func (wH WebhookHandler) syncReleaseWithGithub(ownerRepo, branch, SHA, releaseFile string, scmClient *scm.Client, isRemovedFromGithub bool) {
 	var readFileFrom = branch
 	if isRemovedFromGithub {
 		readFileFrom = SHA
 	}
 
-	wH.Logger.Info(fmt.Sprintf("Attempting to sync %v from %v/%v into cluster", releaseFile, owner, repo))
-	gitFileContents, errReadingFromGit := gitFactory.GetFileContents(owner, repo, readFileFrom, releaseFile)
-	if errReadingFromGit != nil {
-		wH.Logger.Error(errReadingFromGit, "Failed to get fileContents from git")
+	wH.Logger.Info(fmt.Sprintf("Attempting to sync %v from %v into cluster", releaseFile, ownerRepo))
+
+	scmFileContents, _, errGettingFileContents := scmClient.Contents.Find(context.TODO(), ownerRepo, releaseFile, readFileFrom)
+	if errGettingFileContents != nil {
+		wH.Logger.Error(errGettingFileContents, "Failed to get file contents from git")
 		return
 	}
+	gitFileContents := string(scmFileContents.Data)
 
 	hrFromGit := &v1alpha1.Release{}
 	_, gvk, err := scheme.Codecs.UniversalDeserializer().Decode([]byte(gitFileContents), nil, hrFromGit)
@@ -33,7 +35,7 @@ func (wH WebhookHandler) syncReleaseWithGithub(owner, repo, branch, SHA, release
 	}
 
 	if gvk.Kind != "Release" && gvk.GroupVersion() != v1alpha1.GroupVersion {
-		wH.Logger.Info(fmt.Sprintf("Not a valid release %v from %v/%v git repo", releaseFile, owner, repo))
+		wH.Logger.Info(fmt.Sprintf("Not a valid release %v from %v git repo", releaseFile, ownerRepo))
 		return
 	}
 
@@ -48,14 +50,14 @@ func (wH WebhookHandler) syncReleaseWithGithub(owner, repo, branch, SHA, release
 	notificationChannel := utils.GetChannelIDForNotification(hrFromGit.ObjectMeta)
 
 	namespacedName := fmt.Sprintf("%s/%s", hrFromGit.GetNamespace(), hrFromGit.GetName())
-	ownerRepoBranch := fmt.Sprintf("%v/%v@%v", owner, repo, branch)
+	ownerRepoBranch := fmt.Sprintf("%v@%v", ownerRepo, branch)
 
 	// if GitBranchToFollowAnnotation is specified, we ONLY create/update CR's if the current source branch is the same as GitBranchToFollow
 	// this way users can have same CR's exist on many branches but only apply updates from the GitBranchToFollow
 	if branchToFollow, ok := hrFromGit.Annotations[utils.GitBranchToFollowAnnotation]; ok && branchToFollow != "" {
 		if branchToFollow != branch {
-			wH.Logger.Info(fmt.Sprintf("%v from %v/%v, follow-git-branch '%v' does not match current branch '%v'",
-				hrFromGit.GetName(), owner, repo, branchToFollow, branch))
+			wH.Logger.Info(fmt.Sprintf("%v from %v, follow-git-branch '%v' does not match current branch '%v'",
+				hrFromGit.GetName(), ownerRepo, branchToFollow, branch))
 			return
 		}
 	}
@@ -124,13 +126,13 @@ func (wH WebhookHandler) syncReleaseWithGithub(owner, repo, branch, SHA, release
 		hrFromCluster.SetLabels(hrFromGit.GetLabels())
 		hrFromCluster.Spec = hrFromGit.Spec
 		if errUpdating := wH.Client.Update(context.TODO(), hrFromCluster); errUpdating != nil {
-			wH.Logger.Error(errUpdating, fmt.Sprintf("Failed to apply release from %v/%v - %v", owner, repo, namespacedName))
+			wH.Logger.Error(errUpdating, fmt.Sprintf("Failed to apply release from %v - %v", ownerRepo, namespacedName))
 			wH.Notify.SendMsg(cNotifyLib.NotifyTemplate{
 				Channel:   notificationChannel,
 				Title:     namespacedName,
 				EventType: cNotifyLib.Failure,
 				Fields: map[string]string{
-					"Reason":       fmt.Sprintf("Failed to apply release from %v/%v git repo: %v", owner, repo, errUpdating),
+					"Reason":       fmt.Sprintf("Failed to apply release from %v git repo: %v", ownerRepo, errUpdating),
 					"Git-Source":   ownerRepoBranch,
 					"Release-File": releaseFile,
 				},
@@ -138,7 +140,7 @@ func (wH WebhookHandler) syncReleaseWithGithub(owner, repo, branch, SHA, release
 			return
 		}
 
-		wH.Logger.Info(fmt.Sprintf("Updated release from %v/%v - %v", owner, repo, namespacedName))
+		wH.Logger.Info(fmt.Sprintf("Updated release from %v - %v", ownerRepo, namespacedName))
 		wH.Notify.SendMsg(cNotifyLib.NotifyTemplate{
 			Channel:   notificationChannel,
 			Title:     ":rocket:" + namespacedName,

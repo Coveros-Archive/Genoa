@@ -2,83 +2,43 @@ package git
 
 import (
 	"coveros.com/pkg/utils"
-	"encoding/base64"
-	"errors"
-	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
-	"strings"
-
-	lab "github.com/xanzy/go-gitlab"
 )
 
-type gitlab struct {
-	client *lab.Client
+type gitlab struct{}
+
+func NewGitlab() *gitlab {
+	return &gitlab{}
 }
 
-func NewGitlab(token string) *gitlab {
-	var labOptions []lab.ClientOptionFunc
-	if val, ok := os.LookupEnv(utils.EnvVarGitlabSelfHostedUrl); ok {
-		labOptions = append(labOptions, lab.WithBaseURL(val))
+func (g gitlab) GetAccessToken() (string, error) {
+	token, ok := os.LookupEnv(utils.EnvVarGitlabPersonalAccessToken)
+	if !ok || token == "" {
+		return "", ErrorEnvVarNotFound{Message: "Gitlab personal access token not specified in env vars"}
 	}
-	client, err := lab.NewClient(token, labOptions...)
-	if err != nil {
-		return nil
-	}
-	return &gitlab{client: client}
+	return token, nil
 }
 
-func (g *gitlab) GetFileContents(owner, repo, branch, file string) (string, error) {
-	ownerRepo := fmt.Sprintf("%s/%s", owner, repo)
-	option := lab.GetFileOptions{Ref: &branch}
-	f, resp, err := g.client.RepositoryFiles.GetFile(ownerRepo, file, &option)
-	if err != nil {
-		return "", err
+func (g gitlab) GetDeployDir() (string, error) {
+	deployDir, ok := os.LookupEnv(utils.EnvVarGitlabReleaseFilesDir)
+	if !ok || deployDir == "" {
+		return "", ErrorEnvVarNotFound{Message: "Gitlab deploy dir not specified in env vars"}
 	}
-	defer resp.Body.Close()
-	decodedContentInBytes, errDecoding := base64.StdEncoding.DecodeString(f.Content)
-	return string(decodedContentInBytes), errDecoding
+	return deployDir, nil
 }
 
-func (g *gitlab) ParseWebhook(req *http.Request) (interface{}, error) {
-	if req.Header.Get(GitlabWebhookSecretHeaderKey) != os.Getenv(EnvVarGitlabWebhookSecret) {
-		return nil, errors.New("WebhookSecretDoesNotMatch")
+func (g gitlab) GetWebhookSecret() (string, error) {
+	secret, ok := os.LookupEnv(utils.EnvVarGitlabWebhookSecret)
+	if !ok || secret == "" {
+		return "", ErrorEnvVarNotFound{Message: "Gitlab webhook secret not specified in env vars"}
 	}
-	eventType := lab.HookEventType(req)
-	reqBody, errReading := ioutil.ReadAll(req.Body)
-	if errReading != nil {
-		return nil, errReading
-	}
-	defer req.Body.Close()
-	return lab.ParseWebhook(eventType, reqBody)
+	return secret, nil
 }
 
-func (g *gitlab) PushEventToPushEventMeta(pushEvent interface{}) *PushEventMeta {
-	pE, ok := pushEvent.(*lab.PushEvent)
-	if !ok {
-		return nil
+func (g gitlab) GetSelfHostedUrl() (string, error) {
+	url, ok := os.LookupEnv(utils.EnvVarGitlabSelfHostedUrl)
+	if !ok || url == "" {
+		return "", ErrorEnvVarNotFound{Message: "Gitlab self-hosted url not specified in env vars"}
 	}
-	ownerRepo := strings.Split(pE.Project.PathWithNamespace, "/")
-	pEMeta := &PushEventMeta{
-		Ref:     pE.Ref,
-		Before:  pE.Before,
-		After:   pE.After,
-		Repo:    ownerRepo[1],
-		Owner:   ownerRepo[0],
-		Commits: make([]Commit, len(pE.Commits)),
-	}
-
-	for i := 0; i <= len(pE.Commits)-1; i++ {
-		pEMeta.Commits[i].Added = pE.Commits[i].Added
-		pEMeta.Commits[i].Removed = pE.Commits[i].Removed
-		pEMeta.Commits[i].Modified = pE.Commits[i].Modified
-		pEMeta.Commits[i].SHA = pE.Commits[i].ID
-	}
-
-	return pEMeta
-}
-
-func (g *gitlab) GetDeployDir() string {
-	return os.Getenv(EnvVarGitlabReleaseFilesDir)
+	return url, nil
 }

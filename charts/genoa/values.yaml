@@ -7,7 +7,7 @@ deployments:
   genoa:
     replicaCount: 1
     image:
-      repository: agill17/genoa
+      repository: coveros/genoa
       pullPolicy: Always
       tag: 0.6.0
     imagePullSecrets: []
@@ -24,7 +24,7 @@ deployments:
   gitWebhook:
     replicaCount: 1
     image:
-      repository: agill17/genoa
+      repository: coveros/genoa
       pullPolicy: Always
       tag: 0.6.0
     imagePullSecrets: []

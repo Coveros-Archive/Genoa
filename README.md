@@ -68,6 +68,16 @@ config:
 ```
 Create these, then install the chart and it will tell you what to register in github as part of the notes.
 
+## Use cases for genoa
+
+Need to think through how you could do complicated things.
+
+* Simple case where you have a /deploy directory which notifices single cluster for helm release changes
+* Case where you have directories representing individual clusters (or even namespaces)
+* Case where you have separate repositories representing clusters or namespaces
+* Complicated case where /global-deploy directory notifies multiple clusters that a central helm release has changed and therefore should be deployed to multiple clusters. Could use CR branch tags to test on a branch first in a particular cluster, then use the master branch to roll out to all clusters.
+
+
 ## Contributing
 
 Pre-req:

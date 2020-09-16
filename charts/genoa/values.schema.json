@@ -276,12 +276,12 @@
               "secretName": {
                 "type": "string"
               }
+            },
+            "dependencies": {
+              "enabled": ["hosts"]
             }
           }
         }
-      },
-      "dependencies": {
-        "enabled": ["hosts"]
       }
     },
     "nameOverride": {

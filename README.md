@@ -18,7 +18,7 @@ $ kubectl create ns genoa
 $ helm upgrade genoa charts/genoa --install --namespace=genoa --values=genoa.values.yaml
 ```
 NOTE: For custom helm repositories, you need to tell Genoa about them with the `config.helmRepos` in your Genoa values.yaml file.
-The  can be viewed in `repositories.yaml` file in this repository.
+The  can be viewed in `repositories.yaml` file in this repository or in chart values file: .Values.config.helmRepos
 
 ## Using Genoa
 After installing the Genoa helm chart it creates `releases.coveros.apps.com` as a CRD in the cluster. You use Genoa by creating `release` CRs

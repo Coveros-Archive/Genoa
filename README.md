@@ -3,7 +3,7 @@ WIP: Opinionated webhook based GitOps controller that installs and manages helm 
 
 Genoa does two important things:
 
-* Allows you to manage your helm releases using a custom resource definitions of the chart name, version, and values
+* Allows you to manage your helm releases in a GitOps fashion using a custom resource definitions of the chart name, version, and values
 * Responds to git webhook invocations when those resource definitions change (gitops)
 
 ![image info](./pictures/genoa.png)

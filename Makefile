@@ -66,7 +66,9 @@ docker-build:
 docker-push:
 	docker push ${IMG}
 
-build: mody-tidy vet generate manifests fmt docker-build docker-push
+local-build: mody-tidy vet generate manifests fmt docker-build
+
+build: local-build docker-push
 
 deploy-chart:
 	kubectl create ns genoa || true

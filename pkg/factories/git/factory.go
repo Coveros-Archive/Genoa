@@ -1,7 +1,7 @@
 package git
 
 import (
-	"coveros.com/pkg/utils"
+	"coveros.com/pkg"
 	"net/http"
 )
 
@@ -23,13 +23,23 @@ type Git interface {
 }
 
 func NewGitFactory(webhookReq *http.Request) (Git, GitProvider) {
-	isGithubReq := webhookReq.Header.Get(utils.GithubEventHeaderKey)
+	isGithubReq := webhookReq.Header.Get(pkg.GithubEventHeaderKey)
 	if isGithubReq != "" {
 		return NewGithub(), Github
 	}
-	isGitlab := webhookReq.Header.Get(utils.GitlabEventHeaderKey)
+	isGitlab := webhookReq.Header.Get(pkg.GitlabEventHeaderKey)
 	if isGitlab != "" {
 		return NewGitlab(), Gitlab
 	}
 	return nil, Noop
+}
+
+func NewGitFactoryBasedOnProvider(provider GitProvider) Git {
+	switch provider {
+	case Github:
+		return NewGithub()
+	case Gitlab:
+		return NewGitlab()
+	}
+	return nil
 }

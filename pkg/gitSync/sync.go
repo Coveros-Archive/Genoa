@@ -3,12 +3,12 @@ package gitSync
 import (
 	"context"
 	"coveros.com/api/v1alpha1"
+	"coveros.com/pkg"
 	"coveros.com/pkg/utils"
 	"fmt"
 	"github.com/agill17/go-scm/scm"
 	cNotifyLib "github.com/coveros/notification-library"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/client-go/kubernetes/scheme"
 	"reflect"
 )
 
@@ -20,22 +20,9 @@ func (wH WebhookHandler) syncReleaseWithGithub(ownerRepo, branch, SHA, releaseFi
 
 	wH.Logger.Info(fmt.Sprintf("Attempting to sync %v from %v into cluster", releaseFile, ownerRepo))
 
-	scmFileContents, _, errGettingFileContents := scmClient.Contents.Find(context.TODO(), ownerRepo, releaseFile, readFileFrom)
-	if errGettingFileContents != nil {
-		wH.Logger.Error(errGettingFileContents, "Failed to get file contents from git")
-		return
-	}
-	gitFileContents := string(scmFileContents.Data)
-
-	hrFromGit := &v1alpha1.Release{}
-	_, gvk, err := scheme.Codecs.UniversalDeserializer().Decode([]byte(gitFileContents), nil, hrFromGit)
+	hrFromGit, _, err := utils.GetReleaseFileFromGit(scmClient, ownerRepo, releaseFile, readFileFrom)
 	if err != nil {
-		wH.Logger.Error(err, "Could not decode release file from git, perhaps its not a release file..")
-		return
-	}
-
-	if gvk.Kind != "Release" && gvk.GroupVersion() != v1alpha1.GroupVersion {
-		wH.Logger.Info(fmt.Sprintf("Not a valid release %v from %v git repo", releaseFile, ownerRepo))
+		wH.Logger.Error(err, "Failed to get release file from git")
 		return
 	}
 
@@ -47,6 +34,8 @@ func (wH WebhookHandler) syncReleaseWithGithub(ownerRepo, branch, SHA, releaseFi
 		hrFromGit.SetNamespace("default")
 	}
 
+	addUpdateGitMetadata(hrFromGit, scmClient.Driver, releaseFile, ownerRepo)
+
 	notificationChannel := utils.GetChannelIDForNotification(hrFromGit.ObjectMeta)
 
 	namespacedName := fmt.Sprintf("%s/%s", hrFromGit.GetNamespace(), hrFromGit.GetName())
@@ -54,7 +43,7 @@ func (wH WebhookHandler) syncReleaseWithGithub(ownerRepo, branch, SHA, releaseFi
 
 	// if GitBranchToFollowAnnotation is specified, we ONLY create/update CR's if the current source branch is the same as GitBranchToFollow
 	// this way users can have same CR's exist on many branches but only apply updates from the GitBranchToFollow
-	if branchToFollow, ok := hrFromGit.Annotations[utils.GitBranchToFollowAnnotation]; ok && branchToFollow != "" {
+	if branchToFollow, ok := hrFromGit.Annotations[pkg.GitBranchToFollowAnnotation]; ok && branchToFollow != "" {
 		if branchToFollow != branch {
 			wH.Logger.Info(fmt.Sprintf("%v from %v, follow-git-branch '%v' does not match current branch '%v'",
 				hrFromGit.GetName(), ownerRepo, branchToFollow, branch))
@@ -153,4 +142,21 @@ func (wH WebhookHandler) syncReleaseWithGithub(ownerRepo, branch, SHA, releaseFi
 		})
 	}
 
+}
+
+func addUpdateGitMetadata(releaseFromGit *v1alpha1.Release, driver scm.Driver, releaseFilePath, ownerRepo string) {
+	currentAnnotations := releaseFromGit.GetAnnotations()
+	if _, ok := currentAnnotations[pkg.GitProvider]; !ok {
+		currentAnnotations[pkg.GitProvider] = driver.String()
+	}
+
+	if val, ok := currentAnnotations[pkg.ReleaseFilePath]; !ok || val != releaseFilePath {
+		currentAnnotations[pkg.ReleaseFilePath] = releaseFilePath
+	}
+
+	if val, ok := currentAnnotations[pkg.GitOwnerRepo]; !ok || val != ownerRepo {
+		currentAnnotations[pkg.GitOwnerRepo] = ownerRepo
+	}
+
+	releaseFromGit.SetAnnotations(currentAnnotations)
 }

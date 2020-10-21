@@ -1,7 +1,7 @@
 package git
 
 import (
-	"coveros.com/pkg/utils"
+	"coveros.com/pkg"
 	"os"
 )
 
@@ -12,7 +12,7 @@ func NewGitlab() *gitlab {
 }
 
 func (g gitlab) GetAccessToken() (string, error) {
-	token, ok := os.LookupEnv(utils.EnvVarGitlabPersonalAccessToken)
+	token, ok := os.LookupEnv(pkg.EnvVarGitlabPersonalAccessToken)
 	if !ok || token == "" {
 		return "", ErrorEnvVarNotFound{Message: "Gitlab personal access token not specified in env vars"}
 	}
@@ -20,7 +20,7 @@ func (g gitlab) GetAccessToken() (string, error) {
 }
 
 func (g gitlab) GetDeployDir() (string, error) {
-	deployDir, ok := os.LookupEnv(utils.EnvVarGitlabReleaseFilesDir)
+	deployDir, ok := os.LookupEnv(pkg.EnvVarGitlabReleaseFilesDir)
 	if !ok || deployDir == "" {
 		return "", ErrorEnvVarNotFound{Message: "Gitlab deploy dir not specified in env vars"}
 	}
@@ -28,7 +28,7 @@ func (g gitlab) GetDeployDir() (string, error) {
 }
 
 func (g gitlab) GetWebhookSecret() (string, error) {
-	secret, ok := os.LookupEnv(utils.EnvVarGitlabWebhookSecret)
+	secret, ok := os.LookupEnv(pkg.EnvVarGitlabWebhookSecret)
 	if !ok || secret == "" {
 		return "", ErrorEnvVarNotFound{Message: "Gitlab webhook secret not specified in env vars"}
 	}
@@ -36,7 +36,7 @@ func (g gitlab) GetWebhookSecret() (string, error) {
 }
 
 func (g gitlab) GetSelfHostedUrl() (string, error) {
-	url, ok := os.LookupEnv(utils.EnvVarGitlabSelfHostedUrl)
+	url, ok := os.LookupEnv(pkg.EnvVarGitlabSelfHostedUrl)
 	if !ok || url == "" {
 		return "", ErrorEnvVarNotFound{Message: "Gitlab self-hosted url not specified in env vars"}
 	}

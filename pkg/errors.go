@@ -31,3 +31,11 @@ type ErrorChartEntryNotFoundInRepoIndex struct {
 func (e ErrorChartEntryNotFoundInRepoIndex) Error() string {
 	return e.Message
 }
+
+type ErrorFileContentIsNotReleaseFile struct {
+	Message string
+}
+
+func (e ErrorFileContentIsNotReleaseFile) Error() string {
+	return e.Message
+}

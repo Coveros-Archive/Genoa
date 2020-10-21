@@ -20,4 +20,5 @@ require (
 	k8s.io/kubectl v0.18.6
 	rsc.io/letsencrypt v0.0.3 // indirect
 	sigs.k8s.io/controller-runtime v0.6.1
+	sigs.k8s.io/yaml v1.2.0
 )

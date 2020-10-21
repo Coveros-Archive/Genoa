@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"coveros.com/api/v1alpha1"
+	"coveros.com/pkg"
 	v3 "coveros.com/pkg/helm/v3"
 	"coveros.com/pkg/utils"
 	"fmt"
@@ -20,12 +21,12 @@ func (r *ReleaseReconciler) cleanup(cr *v1alpha1.Release, actionConfig *v3.HelmV
 	}
 
 	// second, check if we can delete the namespace
-	if val, ok := cr.GetAnnotations()[utils.AutoDeleteNamespaceAnnotation]; ok && strings.ToLower(val) == "true" {
+	if val, ok := cr.GetAnnotations()[pkg.AutoDeleteNamespaceAnnotation]; ok && strings.ToLower(val) == "true" {
 		deleteNamespace = true
 	}
 
 	// third, remove finalizer from CR
-	if errRemovingFinalizer := utils.RemoveFinalizer(utils.ReleaseFinalizer, r.Client, cr); errRemovingFinalizer != nil {
+	if errRemovingFinalizer := utils.RemoveFinalizer(pkg.ReleaseFinalizer, r.Client, cr); errRemovingFinalizer != nil {
 		return errRemovingFinalizer
 	}
 

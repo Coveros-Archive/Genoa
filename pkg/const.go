@@ -1,10 +1,14 @@
-package utils
+package pkg
 
 const (
 	ReleaseFinalizer                = "coveros.apps.genoa"
 	AutoDeleteNamespaceAnnotation   = ReleaseFinalizer + "/autoDeleteNamespace"
 	GitBranchToFollowAnnotation     = ReleaseFinalizer + "/follow-git-branch"
 	SlackChannelIDAnnotation        = ReleaseFinalizer + "/notification-channel-id"
+	GitProvider                     = ReleaseFinalizer + "/git-provider"
+	ReleaseFilePath                 = ReleaseFinalizer + "/git-release-file"
+	GitOwnerRepo                    = ReleaseFinalizer + "/git-owner-repo"
+	SkipChartSync                   = ReleaseFinalizer + "/skip-chart-sync"
 	EnvVarNotificationProvider      = "NOTIFICATION_PROVIDER"
 	EnvVarNotificationProviderToken = "NOTIFICATION_PROVIDER_TOKEN"
 	EnvVarGitlabSelfHostedUrl       = "GITLAB_SELF_HOSTED_URL"

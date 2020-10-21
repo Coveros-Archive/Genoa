@@ -9,7 +9,7 @@ deployments:
     image:
       repository: coveros/genoa
       pullPolicy: Always
-      tag: 0.6.0
+      tag: 0.7.0
     imagePullSecrets: []
     labels: {}
     annotations: {}
@@ -26,7 +26,33 @@ deployments:
     image:
       repository: coveros/genoa
       pullPolicy: Always
-      tag: 0.6.0
+      tag: 0.7.0
+    imagePullSecrets: []
+    labels: {}
+    annotations: {}
+    volumes: []
+    volumeMounts: []
+    podAnnotations: {}
+    podLabels: {}
+    initContainers: []
+    envVars: []
+    nodeSelector: {}
+    livenessProbe:
+      httpGet:
+        port: 8081
+        path: /health
+      initialDelaySeconds: 10
+      periodSeconds: 30
+      timeoutSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+    resources: {}
+  chartSyncer:
+    replicaCount: 1
+    image:
+      repository: coveros/genoa
+      pullPolicy: Always
+      tag: 0.7.0
     imagePullSecrets: []
     labels: {}
     annotations: {}

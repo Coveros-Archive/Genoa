@@ -36,18 +36,14 @@ func (wH WebhookHandler) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webhookSecret, errGettingWebhookSecret := gitFactory.GetWebhookSecret()
-	if errGettingWebhookSecret != nil {
-		wH.Logger.Error(errGettingWebhookSecret, "Failed to get webhook secret")
-		return
-	}
-
 	scmClient, errGettingClient := scmFactory.NewClient(string(gitProvider), url, token)
 	if errGettingClient != nil {
 		wH.Logger.Error(errGettingClient, "Failed to set up a SCM client...")
 		return
 	}
-	webhook, errParsingWebhook := scmClient.Webhooks.Parse(r, func(webhook scm.Webhook) (string, error) { return webhookSecret, nil })
+	webhook, errParsingWebhook := scmClient.Webhooks.Parse(r, func(webhook scm.Webhook) (string, error) {
+		return gitFactory.GetWebhookSecret()
+	})
 	if errParsingWebhook != nil {
 		wH.Logger.Error(errParsingWebhook, "Failed to parse git webhook...")
 		return

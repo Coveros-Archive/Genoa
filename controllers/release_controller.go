@@ -89,7 +89,7 @@ func (r *ReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	// add finalizer
-	if errAddingFinalizer := utils.AddFinalizer(utils.ReleaseFinalizer, r.Client, cr); errAddingFinalizer != nil {
+	if errAddingFinalizer := utils.AddFinalizer(pkg.ReleaseFinalizer, r.Client, cr); errAddingFinalizer != nil {
 		return ctrl.Result{}, errAddingFinalizer
 	}
 

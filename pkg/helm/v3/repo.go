@@ -7,6 +7,7 @@ import (
 	"helm.sh/helm/v3/pkg/getter"
 	"helm.sh/helm/v3/pkg/repo"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 )
@@ -63,9 +64,11 @@ func (h *HelmV3) RefreshRepoIndex(repoAlias string) error {
 	if errGettingRepoFile != nil {
 		return errGettingRepoFile
 	}
+	all := repoAlias == "all"
 
 	for _, repoEntry := range repoFile.Repositories {
-		if repoEntry.Name == repoAlias {
+		// TODO: replace second check with binary search ( but we will have to sort it ourself sigh... )
+		if all || repoEntry.Name == repoAlias {
 			newChartRepo, err := repo.NewChartRepository(repoEntry, getter.All(h.settings))
 			if err != nil {
 				return err
@@ -97,4 +100,30 @@ func getIdxOfChartVersionFromChartEntries(slice repo.ChartVersions, lookupVersio
 	}
 
 	return getIdxOfChartVersionFromChartEntries(slice, lookupVersion, mid+1, right)
+}
+
+func (h *HelmV3) GetLatestChartVersionAvailable(repoAlias, chartName string) (string, error) {
+	assumedIndexFileName := repoAlias + "-index.yaml"
+	indexFile := filepath.Join(h.settings.RepositoryCache, assumedIndexFileName)
+	// if repo cache file not found, throw an error that indicates to download repo index.
+	if _, err := os.Stat(indexFile); os.IsNotExist(err) {
+		return "", pkg.ErrorHelmRepoNeedsRefresh{Message: fmt.Sprintf("%s repo index file not found, a refresh can help", repoAlias)}
+	}
+
+	// load index file in memory
+	repoIndexFile, errLoadingIndex := repo.LoadIndexFile(indexFile)
+	if errLoadingIndex != nil {
+		logger.Error(errLoadingIndex, "Could not load index file")
+		return "", errLoadingIndex
+	}
+
+	if chartEntries, chartFound := repoIndexFile.Entries[chartName]; chartFound {
+
+		sort.Slice(chartEntries, func(i, j int) bool {
+			return chartEntries[i].Version < chartEntries[j].Version
+		})
+
+		return chartEntries[len(chartEntries)-1].Version, nil
+	}
+	return "", nil
 }

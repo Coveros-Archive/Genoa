@@ -1,4 +1,4 @@
-VERSION ?= 0.6.0
+VERSION ?= 0.7.0
 # Image URL to use all building/pushing image targets
 IMG ?= coveros/genoa:${VERSION}
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
@@ -70,7 +70,10 @@ build: mody-tidy vet generate manifests fmt docker-build docker-push
 
 deploy-chart:
 	kubectl create ns genoa || true
-	helm upgrade genoa charts/genoa --install --namespace=genoa --set deployments.genoa.image.tag=${VERSION} --set deployments.gitWebhook.image.tag=${VERSION}
+	helm upgrade genoa charts/genoa --install --namespace=genoa \
+		--set deployments.genoa.image.tag=${VERSION} \
+		--set deployments.gitWebhook.image.tag=${VERSION} \
+		--set deployments.chartSyncer.image.tag=${VERSION}
 
 # find or download controller-gen
 # download controller-gen if necessary

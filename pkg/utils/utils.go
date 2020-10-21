@@ -3,6 +3,7 @@ package utils
 import (
 	"context"
 	"coveros.com/api/v1alpha1"
+	"coveros.com/pkg"
 	"errors"
 	cNotifyLib "github.com/coveros/notification-library"
 	"github.com/ghodss/yaml"
@@ -157,7 +158,7 @@ func DownloadFile(filepath, url, username, password string) (err error) {
 
 func GetChannelIDForNotification(runtimeObjMeta metav1.ObjectMeta) string {
 	channelToNotify := os.Getenv("DEFAULT_CHANNEL_ID")
-	if channelID, ok := runtimeObjMeta.Annotations[SlackChannelIDAnnotation]; ok {
+	if channelID, ok := runtimeObjMeta.Annotations[pkg.SlackChannelIDAnnotation]; ok {
 		channelToNotify = channelID
 	}
 	return channelToNotify
@@ -165,7 +166,7 @@ func GetChannelIDForNotification(runtimeObjMeta metav1.ObjectMeta) string {
 
 func getNotificationProvider() cNotifyLib.NotificationProvider {
 	notificationProvider := cNotifyLib.Noop
-	if val, ok := os.LookupEnv(EnvVarNotificationProvider); ok {
+	if val, ok := os.LookupEnv(pkg.EnvVarNotificationProvider); ok {
 		notificationProvider = cNotifyLib.NotificationProvider(val)
 	}
 	return notificationProvider
@@ -173,7 +174,7 @@ func getNotificationProvider() cNotifyLib.NotificationProvider {
 
 func getNotificationProviderToken() string {
 	notificationProviderToken := ""
-	if val, ok := os.LookupEnv(EnvVarNotificationProviderToken); ok {
+	if val, ok := os.LookupEnv(pkg.EnvVarNotificationProviderToken); ok {
 		notificationProviderToken = val
 	}
 	return notificationProviderToken

@@ -8,7 +8,9 @@ import (
 	"github.com/ghodss/yaml"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"helm.sh/helm/v3/pkg/storage/driver"
 	"io/ioutil"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"path/filepath"
 	"strings"
@@ -18,8 +20,8 @@ import (
 const validTestDir = "reconcile-test-data/valid"
 const invalidTestDir = "reconcile-test-data/invalid"
 
+var helmV3 *v3.HelmV3
 var _ = Describe("Valid test Reconciles", func() {
-
 	// test-data prep
 	tests, errReadingDir := ioutil.ReadDir(validTestDir)
 	if errReadingDir != nil {
@@ -39,17 +41,17 @@ var _ = Describe("Valid test Reconciles", func() {
 		}
 		namespacedName := fmt.Sprintf("%s/%s", testRelease.GetNamespace(), testRelease.GetName())
 
-		When(fmt.Sprintf("%v helm release is created", namespacedName), func() {
-			It(fmt.Sprintf("%v reconcile successfully and a helm release should exist", namespacedName), func() {
+		BeforeEach(func() {
+			helmV3, err = v3.NewActionConfig(testRelease.GetNamespace(), cfg)
+			if err != nil {
+				Fail("Failed to set up a helm client")
+			}
+		})
 
-				helmV3, errCreatingActionConfig := v3.NewActionConfig(testRelease.GetNamespace(), cfg)
-				if errCreatingActionConfig != nil {
-					Fail("Failed to set up a helm client")
-				}
+		When(fmt.Sprintf("%v release CR is created", namespacedName), func() {
+			It(fmt.Sprintf("%v reconciles successfully and a helm release should exist", namespacedName), func() {
 
-				By(fmt.Sprintf("Creating a valid %v helm release", namespacedName), func() {
-					Expect(k8sClient.Create(context.TODO(), testRelease)).Should(Succeed())
-				})
+				Expect(k8sClient.Create(context.TODO(), testRelease)).Should(Succeed())
 				releaseFromCluster := &coverosv1alpha1.Release{}
 				By(fmt.Sprintf("Verifying that %v CR exists and status is installed", namespacedName), func() {
 					Eventually(func() bool {
@@ -95,6 +97,35 @@ var _ = Describe("Valid test Reconciles", func() {
 					}).Should(BeTrue())
 				})
 
+			})
+		})
+
+		When(fmt.Sprintf("%v release CR is deleted", namespacedName), func() {
+			It(fmt.Sprintf("%v CR should no longer exists and helm release should be deleted", namespacedName), func() {
+
+				By(fmt.Sprintf("%v deleting release CR", namespacedName), func() {
+					Expect(k8sClient.Delete(context.TODO(), testRelease)).Should(Succeed())
+				})
+
+				By(fmt.Sprintf("Ensuring that %v release CR should not exist", namespacedName), func() {
+					Eventually(func() bool {
+						if err := k8sClient.Get(context.TODO(),
+							types.NamespacedName{
+								Name:      testRelease.GetName(),
+								Namespace: testRelease.GetNamespace()}, (&coverosv1alpha1.Release{})); err != nil {
+							if apierrors.IsNotFound(err) {
+								return true
+							}
+						}
+						return false
+					}, 30*time.Second, 10*time.Second).Should(BeTrue())
+				})
+
+				By(fmt.Sprintf("Verifying that helm release '%v' does not exist", namespacedName), func() {
+					_, errChecking := helmV3.GetRelease(testRelease.GetName())
+					Expect(errChecking).ShouldNot(BeNil())
+					Expect(errChecking).Should(MatchError(driver.ErrReleaseNotFound))
+				})
 			})
 		})
 	}

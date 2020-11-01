@@ -1,9 +1,9 @@
-module coveros.com
+module github.com/coveros/genoa
 
 go 1.13
 
 require (
-	github.com/agill17/go-scm v1.5.161
+	github.com/agill17/go-scm v1.5.161 // indirect
 	github.com/coveros/notification-library v0.0.0-20200817034158-9e267ac132da
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-logr/logr v0.1.0

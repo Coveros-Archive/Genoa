@@ -30,7 +30,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	coverosv1alpha1 "coveros.com/api/v1alpha1"
+	coverosv1alpha1 "github.com/coveros/genoa/api/v1alpha1"
 	// +kubebuilder:scaffold:imports
 )
 

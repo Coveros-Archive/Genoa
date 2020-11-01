@@ -2,9 +2,9 @@ package controllers
 
 import (
 	"context"
-	"coveros.com/api/v1alpha1"
-	v3 "coveros.com/pkg/helm/v3"
-	"coveros.com/pkg/utils"
+	"github.com/coveros/genoa/api/v1alpha1"
+	v3 "github.com/coveros/genoa/pkg/helm/v3"
+	"github.com/coveros/genoa/pkg/utils"
 	"fmt"
 	"helm.sh/helm/v3/pkg/release"
 	"strings"

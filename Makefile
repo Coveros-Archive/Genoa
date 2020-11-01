@@ -15,7 +15,8 @@ all: manager
 
 # Run tests
 test: generate fmt vet manifests
-	go test ./... -coverprofile cover.out
+	# sudo because release controller has to download a chart and read into memory, so it needs permissions to read on envtest
+	sudo go test ./... -coverprofile cover.out
 
 # Build manager binary
 manager: generate fmt vet
@@ -72,7 +73,7 @@ build: local-build docker-push
 
 deploy-chart:
 	kubectl create ns genoa || true
-	helm upgrade genoa charts/genoa --install --namespace=genoa --set deployments.genoa.image.tag=${VERSION} --set deployments.gitWebhook.image.tag=${VERSION}
+	helm upgrade genoa charts/genoa --install --namespace=genoa --set deployments.genoa.image.tag=${VERSION}
 
 # find or download controller-gen
 # download controller-gen if necessary

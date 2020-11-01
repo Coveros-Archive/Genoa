@@ -9,34 +9,42 @@ import (
 	. "github.com/onsi/gomega"
 	"io/ioutil"
 	"k8s.io/apimachinery/pkg/types"
+	"path/filepath"
 	"time"
 )
 
 const validTestDir = "integration-test-data/valid"
+const invalidTestDir = "integration-test-data/invalid"
 
-var _ = Describe("Successful Reconcile", func() {
-	When("A helm release is created", func() {
-		It("Should reconcile successfully and a helm release should exist", func() {
+var _ = Describe("Valid test Reconciles", func() {
 
-			var tests, errReadingDir = ioutil.ReadDir(validTestDir)
-			Expect(errReadingDir).ToNot(HaveOccurred())
+	// test-data prep
+	tests, errReadingDir := ioutil.ReadDir(validTestDir)
+	if errReadingDir != nil {
+		Fail("Failed to read valid test dir")
+	}
 
-			for _, test := range tests {
+	for _, test := range tests {
+		rawTestData, errReading := ioutil.ReadFile(filepath.Join(validTestDir, test.Name()))
+		if errReading != nil {
+			Fail("Failed to read valid test file")
+		}
 
-				rawTestData, errReading := ioutil.ReadFile(validTestDir + "/" + test.Name())
-				Expect(errReading).ToNot(HaveOccurred())
-				Expect(rawTestData).ToNot(BeNil())
+		testRelease := &coverosv1alpha1.Release{}
+		err := yaml.Unmarshal(rawTestData, testRelease)
+		if err != nil {
+			Fail("Failed to parse test file")
+		}
+		namespacedName := fmt.Sprintf("%s/%s", testRelease.GetNamespace(), testRelease.GetName())
 
-				testRelease := &coverosv1alpha1.Release{}
-				err := yaml.Unmarshal(rawTestData, testRelease)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(testRelease).ToNot(BeNil())
+		When(fmt.Sprintf("%v helm release is created",namespacedName), func() {
+			It(fmt.Sprintf("%v reconcile successfully and a helm release should exist",namespacedName), func() {
 
-				By(fmt.Sprintf("Creating a valid %v/%v helm release", testRelease.GetNamespace(), testRelease.GetName()), func() {
+				By(fmt.Sprintf("Creating a valid %v helm release", namespacedName), func() {
 					Expect(k8sClient.Create(context.TODO(), testRelease)).Should(Succeed())
 				})
 
-				By(fmt.Sprintf("Verifying that %v/%v exists and is installed", testRelease.GetNamespace(), testRelease.GetName()), func() {
+				By(fmt.Sprintf("Verifying that %v exists and is installed", namespacedName), func() {
 					Eventually(func() bool {
 						releaseFromCluster := &coverosv1alpha1.Release{}
 
@@ -50,8 +58,55 @@ var _ = Describe("Successful Reconcile", func() {
 
 					}, 30*time.Second, 10*time.Second).Should(BeTrue())
 				})
-			}
-
+			})
 		})
-	})
+	}
+})
+
+
+var _ = Describe("Invalid test Reconciles", func() {
+
+	// test-data prep
+	tests, errReadingDir := ioutil.ReadDir(invalidTestDir)
+	if errReadingDir != nil {
+		Fail("Failed to read valid test dir")
+	}
+
+	for _, test := range tests {
+		rawTestData, errReading := ioutil.ReadFile(filepath.Join(invalidTestDir, test.Name()))
+		if errReading != nil {
+			Fail("Failed to read valid test file")
+		}
+
+		testRelease := &coverosv1alpha1.Release{}
+		err := yaml.Unmarshal(rawTestData, testRelease)
+		if err != nil {
+			Fail("Failed to parse test file")
+		}
+		namespacedName := fmt.Sprintf("%s/%s", testRelease.GetNamespace(), testRelease.GetName())
+
+		When(fmt.Sprintf("%v helm release is created",namespacedName), func() {
+			It(fmt.Sprintf("%v does not reconcile successfully",namespacedName), func() {
+
+				By(fmt.Sprintf("Creating a schema-valid %v helm release", namespacedName), func() {
+					Expect(k8sClient.Create(context.TODO(), testRelease)).Should(Succeed())
+				})
+
+				By(fmt.Sprintf("Verifying that %v does not exist in cluster", namespacedName), func() {
+					Eventually(func() bool {
+						releaseFromCluster := &coverosv1alpha1.Release{}
+
+						if err := k8sClient.Get(context.TODO(), types.NamespacedName{
+							Name:      testRelease.GetName(),
+							Namespace: testRelease.GetNamespace()},
+							releaseFromCluster); err != nil {
+							return false
+						}
+						return releaseFromCluster.Status.Installed
+
+					}, 30*time.Second, 10*time.Second).Should(BeFalse())
+				})
+			})
+		})
+	}
 })

@@ -1,9 +1,9 @@
 package v3
 
 import (
+	"fmt"
 	"github.com/coveros/genoa/pkg"
 	"github.com/coveros/genoa/pkg/utils"
-	"fmt"
 	"helm.sh/helm/v3/pkg/repo"
 	"os"
 	"path/filepath"

@@ -64,7 +64,7 @@ func main() {
 		MetricsBindAddress: metricsAddr,
 		Port:               9443,
 		LeaderElection:     enableLeaderElection,
-		LeaderElectionID:   "a8248481.github.com/coveros",
+		LeaderElectionID:   "a8248481.github.com-coveros-genoa",
 		SyncPeriod:         &syncPeriod,
 		Namespace:          "",
 	})

@@ -6,7 +6,6 @@ import (
 	"github.com/coveros/genoa/api/v1alpha1"
 	cNotifyLib "github.com/coveros/notification-library"
 	"io"
-	v1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -17,7 +16,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"strings"
 )
-
 
 func UpdateCr(runtimeObj runtime.Object, client client.Client) error {
 	return client.Update(context.TODO(), runtimeObj)
@@ -35,21 +33,6 @@ func AddFinalizer(whichFinalizer string, client client.Client, cr *v1alpha1.Rele
 func RemoveFinalizer(whichFinalizer string, client client.Client, cr *v1alpha1.Release) error {
 	controllerutil.RemoveFinalizer(cr, whichFinalizer)
 	return UpdateCr(cr, client)
-}
-
-func CreateNamespace(name string, client client.Client) error {
-	ns := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: name}}
-	err := client.Get(context.TODO(), types.NamespacedName{Name: name}, ns)
-	if err != nil {
-		if apiErrors.IsNotFound(err) {
-			if err := client.Create(context.TODO(), ns); err != nil {
-				return err
-			}
-			return nil
-		}
-		return err
-	}
-	return nil
 }
 
 func CreateRelease(hr *v1alpha1.Release, client client.Client) (*v1alpha1.Release, error) {

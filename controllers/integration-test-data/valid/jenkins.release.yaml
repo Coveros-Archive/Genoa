@@ -2,10 +2,7 @@ apiVersion: coveros.apps.com/v1alpha1
 kind: Release
 metadata:
   name: jenkins
-  annotations:
-    "coveros.apps.genoa/autoDeleteNamespace": "true"
-    "coveros.apps.genoa/follow-git-branch": "master"
-    "coveros.apps.genoa/notification-channel-id": "YOUR_SLACK_CHANNEL_ID"
+  namespace: default
 spec:
   chart: stable/jenkins
   version: 2.4.1

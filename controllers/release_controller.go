@@ -18,11 +18,11 @@ package controllers
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/coveros/genoa/pkg"
 	v3 "github.com/coveros/genoa/pkg/helm/v3"
 	"github.com/coveros/genoa/pkg/utils"
-	"errors"
-	"fmt"
 	cNotifyLib "github.com/coveros/notification-library"
 	"github.com/go-logr/logr"
 	"helm.sh/helm/v3/pkg/storage/driver"

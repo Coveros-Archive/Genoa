@@ -2,10 +2,10 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"github.com/coveros/genoa/api/v1alpha1"
 	v3 "github.com/coveros/genoa/pkg/helm/v3"
 	"github.com/coveros/genoa/pkg/utils"
-	"fmt"
 	"helm.sh/helm/v3/pkg/release"
 	"strings"
 	"time"

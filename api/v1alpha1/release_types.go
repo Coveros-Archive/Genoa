@@ -62,6 +62,9 @@ type ReleaseSpec struct {
 
 	// +optional
 	ValuesOverride Values `json:"values"`
+
+	// +optional
+	MaxRetries int `json:"maxRetries"`
 }
 
 type Values struct {
@@ -102,8 +105,8 @@ func (v *Values) UnmarshalJSON(data []byte) error {
 
 // ReleaseStatus defines the observed state of Release
 type ReleaseStatus struct {
-	RevisionNumber int  `json:"revisionNumber"`
-	Installed      bool `json:"installed"`
+	FailureCount int  `json:"failureCount"`
+	Installed    bool `json:"installed"`
 }
 
 // +kubebuilder:object:root=true

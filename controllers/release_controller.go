@@ -35,6 +35,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"strings"
 	"time"
 
@@ -54,6 +56,11 @@ func (r *ReleaseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		WithOptions(controller.Options{MaxConcurrentReconciles: 7}).
 		For(&coverosv1alpha1.Release{}).
+		WithEventFilter(predicate.Funcs{
+			UpdateFunc: func(e event.UpdateEvent) bool {
+				return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration()
+			},
+		}).
 		Complete(r)
 }
 
@@ -127,7 +134,11 @@ func (r *ReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			r.Log.Info(fmt.Sprintf("%v depends on %v/%v and is not ready yet.. will re-check back in a few...", req.NamespacedName, ns, name))
 			return ctrl.Result{Requeue: true, RequeueAfter: 60 * time.Second}, nil
 		}
+	}
 
+	if cr.Status.FailureCount > cr.Spec.MaxRetries {
+		r.Log.Info(fmt.Sprintf("%v has reached max reconcile limit, please update spec.maxRetries if you want to retry", req.NamespacedName))
+		return ctrl.Result{}, nil
 	}
 
 	releaseInfo, errGettingReleaseInfo := helmV3.GetRelease(hrName)
@@ -138,6 +149,10 @@ func (r *ReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			chartPath, errPullingChart := r.pullChart(hrNamespace, hrName, repoAlias, chartName, cr.Spec.Version, helmV3)
 			if errPullingChart != nil {
 				if _, ok := errPullingChart.(pkg.ErrorHelmRepoNeedsRefresh); ok {
+					cr.Status.FailureCount++
+					if err := r.Client.Status().Update(context.TODO(), cr); err != nil {
+						return ctrl.Result{}, err
+					}
 					return ctrl.Result{Requeue: true}, helmV3.RefreshRepoIndex(repoAlias)
 				}
 				return ctrl.Result{}, errPullingChart
@@ -156,6 +171,10 @@ func (r *ReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 						"Namespace": cr.GetNamespace(),
 						"Reason":    fmt.Sprintf("Release failed to install :bug: :construction: %v", errInstallingChart)},
 				})
+				cr.Status.FailureCount++
+				if err := r.Client.Status().Update(context.TODO(), cr); err != nil {
+					return ctrl.Result{}, err
+				}
 				return ctrl.Result{}, errInstallingChart
 			}
 			// force requeue to get new release state
@@ -169,6 +188,10 @@ func (r *ReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 					"Reason":    "Release installed successfully :smile:"},
 			})
 			cr.Status.Installed = true
+			cr.Status.FailureCount = 0
+			if err := utils.UpdateCrStatus(cr, r.Client); err != nil {
+				return ctrl.Result{}, err
+			}
 			return ctrl.Result{Requeue: true}, r.Client.Status().Update(context.TODO(), cr)
 		}
 		return ctrl.Result{}, errGettingReleaseInfo
@@ -225,6 +248,7 @@ func (r *ReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		//}
 		upgradeOpts := getReleaseUpgradeOptions(cr)
 		if _, errUpgradingRelease := helmV3.UpgradeRelease(chartPath, upgradeOpts, cr.Spec.ValuesOverride.V); errUpgradingRelease != nil {
+
 			r.Notifier.SendMsg(cNotifyLib.NotifyTemplate{
 				Channel:   notificationChannel,
 				Title:     req.NamespacedName.String(),
@@ -234,6 +258,10 @@ func (r *ReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 					"Namespace": cr.GetNamespace(),
 					"Reason":    fmt.Sprintf("Release failed to upgrade :bug: :construction: %v", errUpgradingRelease)},
 			})
+			cr.Status.FailureCount++
+			if err := r.Client.Status().Update(context.TODO(), cr); err != nil {
+				return ctrl.Result{}, err
+			}
 			return ctrl.Result{}, errUpgradingRelease
 		}
 		r.Notifier.SendMsg(cNotifyLib.NotifyTemplate{

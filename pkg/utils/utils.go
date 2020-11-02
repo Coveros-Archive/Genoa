@@ -2,12 +2,10 @@ package utils
 
 import (
 	"context"
-	"coveros.com/api/v1alpha1"
 	"errors"
+	"github.com/coveros/genoa/api/v1alpha1"
 	cNotifyLib "github.com/coveros/notification-library"
-	"github.com/ghodss/yaml"
 	"io"
-	v1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -18,46 +16,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"strings"
 )
-
-func UnMarshalStringDataToRelease(strData string) (*v1alpha1.Release, error) {
-	release := &v1alpha1.Release{}
-	if err := yaml.Unmarshal([]byte(strData), release); err != nil {
-		return nil, err
-	}
-
-	if release.Kind == "" || release.APIVersion == "" {
-		return nil, nil
-	}
-
-	return release, nil
-}
-
-func RemoveDupesFromSlice(fromSlice []string) []string {
-	m := make(map[string]int)
-	var finalSlice []string
-
-	for _, e := range fromSlice {
-		m[e] = 1
-	}
-
-	for k, _ := range m {
-		finalSlice = append(finalSlice, k)
-	}
-	return finalSlice
-}
-
-func SliceContainsString(slice []string, lookup string) (bool, int) {
-	var contains bool
-	var idx int = -1
-	for i, e := range slice {
-		if e == lookup {
-			contains = true
-			idx = i
-			break
-		}
-	}
-	return contains, idx
-}
 
 func UpdateCr(runtimeObj runtime.Object, client client.Client) error {
 	return client.Update(context.TODO(), runtimeObj)
@@ -75,21 +33,6 @@ func AddFinalizer(whichFinalizer string, client client.Client, cr *v1alpha1.Rele
 func RemoveFinalizer(whichFinalizer string, client client.Client, cr *v1alpha1.Release) error {
 	controllerutil.RemoveFinalizer(cr, whichFinalizer)
 	return UpdateCr(cr, client)
-}
-
-func CreateNamespace(name string, client client.Client) error {
-	ns := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: name}}
-	err := client.Get(context.TODO(), types.NamespacedName{Name: name}, ns)
-	if err != nil {
-		if apiErrors.IsNotFound(err) {
-			if err := client.Create(context.TODO(), ns); err != nil {
-				return err
-			}
-			return nil
-		}
-		return err
-	}
-	return nil
 }
 
 func CreateRelease(hr *v1alpha1.Release, client client.Client) (*v1alpha1.Release, error) {

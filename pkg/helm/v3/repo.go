@@ -1,9 +1,9 @@
 package v3
 
 import (
-	"coveros.com/pkg"
-	"coveros.com/pkg/utils"
 	"fmt"
+	"github.com/coveros/genoa/pkg"
+	"github.com/coveros/genoa/pkg/utils"
 	"helm.sh/helm/v3/pkg/getter"
 	"helm.sh/helm/v3/pkg/repo"
 	"os"

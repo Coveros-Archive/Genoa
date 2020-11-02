@@ -21,32 +21,6 @@ deployments:
     envVars: []
     nodeSelector: {}
     resources: {}
-  gitWebhook:
-    replicaCount: 1
-    image:
-      repository: coveros/genoa
-      pullPolicy: Always
-      tag: 0.6.0
-    imagePullSecrets: []
-    labels: {}
-    annotations: {}
-    volumes: []
-    volumeMounts: []
-    podAnnotations: {}
-    podLabels: {}
-    initContainers: []
-    envVars: []
-    nodeSelector: {}
-    livenessProbe:
-      httpGet:
-        port: 8081
-        path: /health
-      initialDelaySeconds: 10
-      periodSeconds: 30
-      timeoutSeconds: 10
-      successThreshold: 1
-      failureThreshold: 3
-    resources: {}
 
 
 config:
@@ -55,24 +29,6 @@ config:
     #provider: "slack"
     #defaultChannelID: ""
     #token: ""
-  github: {}
-    #enabled: true
-    #deployDir: deploy/
-    #you can generate webhookSecret using $ ruby -rsecurerandom -e 'puts SecureRandom.hex(20)'
-    #set that value here and also set the same value in your github webhook configuration(s)
-    #webhookSecret: ""
-    #accessToken: ""
-    ## if you are using github enterprise, provide the github enterprise url
-    #selfHostedUrl: ""
-  gitlab: {}
-    #enabled: true
-    #deployDir: deploy/
-    # you can generate webhookSecret using $ ruby -rsecurerandom -e 'puts SecureRandom.hex(20)'
-    # set that value here and also set the same value in your gitlab webhook configuration(s)
-    #webhookSecret: ""
-    #accessToken: ""
-    ## if you are hosting your own gitlab, provide your hosted gitlab url
-    #selfHostedUrl: ""
   helmRepos: |
     apiVersion: v1
     repositories:
@@ -102,13 +58,3 @@ extraConfigMaps: []
 
 ## because helm client inside operator would need freedom to install releases
 clusterRole: cluster-admin
-
-ingress: {}
-  #enabled: false
-  #labels: {}
-  #annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
-  #host: genoa.foo.com
-  #tls: []
-  #hosts: []

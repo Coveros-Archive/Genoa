@@ -17,7 +17,10 @@ limitations under the License.
 package controllers
 
 import (
+	"github.com/coveros/genoa/pkg/utils"
+	"k8s.io/apimachinery/pkg/runtime"
 	"path/filepath"
+	controllerruntime "sigs.k8s.io/controller-runtime"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -30,7 +33,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	coverosv1alpha1 "coveros.com/api/v1alpha1"
+	coverosv1alpha1 "github.com/coveros/genoa/api/v1alpha1"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -40,6 +43,7 @@ import (
 var cfg *rest.Config
 var k8sClient client.Client
 var testEnv *envtest.Environment
+var testRuntimeScheme = runtime.NewScheme()
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -62,14 +66,35 @@ var _ = BeforeSuite(func(done Done) {
 	Expect(err).ToNot(HaveOccurred())
 	Expect(cfg).ToNot(BeNil())
 
-	err = coverosv1alpha1.AddToScheme(scheme.Scheme)
+	err = coverosv1alpha1.AddToScheme(testRuntimeScheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = scheme.AddToScheme(testRuntimeScheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	testMgr, errCreatingNewMgr := controllerruntime.NewManager(cfg, controllerruntime.Options{
+		Scheme: testRuntimeScheme,
+	})
+	Expect(errCreatingNewMgr).NotTo(HaveOccurred())
+
+	err = (&ReleaseReconciler{
+		Scheme:   testRuntimeScheme,
+		Client:   testMgr.GetClient(),
+		Cfg:      cfg,
+		Notifier: utils.NewNotifier(),
+		Log:      controllerruntime.Log.WithName("test")}).
+		SetupWithManager(testMgr)
 	Expect(err).NotTo(HaveOccurred())
 
 	// +kubebuilder:scaffold:scheme
 
-	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
-	Expect(err).ToNot(HaveOccurred())
+	k8sClient = testMgr.GetClient()
 	Expect(k8sClient).ToNot(BeNil())
+
+	go func() {
+		err = testMgr.Start(controllerruntime.SetupSignalHandler())
+		Expect(err).ToNot(HaveOccurred())
+	}()
 
 	close(done)
 }, 60)

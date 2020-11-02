@@ -17,9 +17,9 @@ limitations under the License.
 package main
 
 import (
-	v3 "coveros.com/pkg/helm/v3"
-	"coveros.com/pkg/utils"
 	"flag"
+	v3 "github.com/coveros/genoa/pkg/helm/v3"
+	"github.com/coveros/genoa/pkg/utils"
 	"os"
 	"time"
 
@@ -29,8 +29,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	coverosv1alpha1 "coveros.com/api/v1alpha1"
-	"coveros.com/controllers"
+	coverosv1alpha1 "github.com/coveros/genoa/api/v1alpha1"
+	"github.com/coveros/genoa/controllers"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -64,7 +64,7 @@ func main() {
 		MetricsBindAddress: metricsAddr,
 		Port:               9443,
 		LeaderElection:     enableLeaderElection,
-		LeaderElectionID:   "a8248481.coveros.com",
+		LeaderElectionID:   "a8248481.github.com-coveros-genoa",
 		SyncPeriod:         &syncPeriod,
 		Namespace:          "",
 	})

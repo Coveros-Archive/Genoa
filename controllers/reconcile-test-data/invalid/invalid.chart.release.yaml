@@ -1,0 +1,9 @@
+apiVersion: coveros.apps.com/v1alpha1
+kind: Release
+metadata:
+  name: invalid-chart
+  namespace: default
+spec:
+  chart: stable/azlsfdhasjkldh
+  version: 2.4.1
+  values: {}

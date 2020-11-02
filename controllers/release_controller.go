@@ -18,11 +18,11 @@ package controllers
 
 import (
 	"context"
-	"coveros.com/pkg"
-	v3 "coveros.com/pkg/helm/v3"
-	"coveros.com/pkg/utils"
 	"errors"
 	"fmt"
+	"github.com/coveros/genoa/pkg"
+	v3 "github.com/coveros/genoa/pkg/helm/v3"
+	"github.com/coveros/genoa/pkg/utils"
 	cNotifyLib "github.com/coveros/notification-library"
 	"github.com/go-logr/logr"
 	"helm.sh/helm/v3/pkg/storage/driver"
@@ -38,7 +38,7 @@ import (
 	"strings"
 	"time"
 
-	coverosv1alpha1 "coveros.com/api/v1alpha1"
+	coverosv1alpha1 "github.com/coveros/genoa/api/v1alpha1"
 )
 
 // ReleaseReconciler reconciles a Release object

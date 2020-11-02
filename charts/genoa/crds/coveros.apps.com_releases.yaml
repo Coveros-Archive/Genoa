@@ -70,6 +70,8 @@ spec:
               type: boolean
             includeCRDS:
               type: boolean
+            maxRetries:
+              type: integer
             values:
               type: object
             version:
@@ -85,13 +87,13 @@ spec:
         status:
           description: ReleaseStatus defines the observed state of Release
           properties:
+            failureCount:
+              type: integer
             installed:
               type: boolean
-            revisionNumber:
-              type: integer
           required:
+          - failureCount
           - installed
-          - revisionNumber
           type: object
       type: object
   version: v1alpha1

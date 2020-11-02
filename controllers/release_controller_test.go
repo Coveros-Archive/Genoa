@@ -17,8 +17,8 @@ import (
 	"time"
 )
 
-const validTestDir = "reconcile-test-data/valid"
-const invalidTestDir = "reconcile-test-data/invalid"
+const validTestDir = "test-data/valid"
+const invalidTestDir = "test-data/invalid"
 
 var helmV3 *v3.HelmV3
 var _ = Describe("Valid test Reconciles", func() {
@@ -95,6 +95,7 @@ var _ = Describe("Valid test Reconciles", func() {
 						}
 						return true
 					}).Should(BeTrue())
+					Expect(releaseFromCluster.Status.FailureCount).Should(Equal(0))
 				})
 
 			})

@@ -1,4 +1,4 @@
-VERSION ?= 0.6.0
+VERSION ?= 0.6.1
 # Image URL to use all building/pushing image targets
 IMG ?= coveros/genoa:${VERSION}
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)

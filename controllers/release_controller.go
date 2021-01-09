@@ -136,7 +136,7 @@ func (r *ReleaseReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		}
 	}
 
-	if cr.Status.FailureCount > cr.Spec.MaxRetries {
+	if (cr.Status.FailureCount >= cr.Spec.MaxRetries) && cr.Status.FailureCount != 0 {
 		r.Log.Info(fmt.Sprintf("%v has reached max reconcile limit, please update spec.maxRetries if you want to retry", req.NamespacedName))
 		return ctrl.Result{}, nil
 	}
